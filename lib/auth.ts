@@ -30,7 +30,7 @@ function safeCompare(a: string, b: string) {
 function shouldUseSecureCookie() {
   if (process.env.COOKIE_SECURE === "true") return true;
   if (process.env.COOKIE_SECURE === "false") return false;
-  return (process.env.NEXT_PUBLIC_APP_URL || "").startsWith("https://");
+  return (process.env.NEXT_PUBLIC_APP_URL || "").startsWith("https://") || process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
 }
 
 export function hashPassword(password: string) {
