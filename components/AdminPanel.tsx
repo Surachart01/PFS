@@ -4,6 +4,7 @@ import {
   BookOpen,
   ChevronDown,
   ChevronUp,
+  Database,
   Edit2,
   ExternalLink,
   Eye,
@@ -12,12 +13,15 @@ import {
   Power,
   RefreshCw,
   Search,
+  Server,
+  ShieldCheck,
   Trash2,
   TrendingUp,
   Users,
   X
 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
+import { AdminShell } from "@/components/AdminShell";
 
 type AdminStudent = {
   id: string;
@@ -37,13 +41,21 @@ type SortKey = "name" | "year" | "portfolioStatus";
 
 const YEAR_LABELS: Record<number, string> = { 1: "ปี 1", 2: "ปี 2", 3: "ปี 3", 4: "ปี 4" };
 
-export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[] }) {
+export function AdminPanel({
+  initialStudents,
+  user
+}: {
+  initialStudents: AdminStudent[];
+  user: { firstName: string; lastName: string; email?: string; role: string };
+}) {
   const [students, setStudents] = useState(initialStudents);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
   const [showAddPanel, setShowAddPanel] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState<AdminStudent | null>(null);
+  const [activeTab, setActiveTab] = useState<"dashboard" | "students" | "published" | "accounts">("dashboard");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortAsc, setSortAsc] = useState(true);
 
@@ -77,10 +89,16 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
 
   const filtered = useMemo(() => {
     const text = search.toLowerCase();
-    const list = students.filter((s) => {
+    let list = students.filter((s) => {
       const row = `${s.studentId ?? ""} ${s.firstName} ${s.lastName} ${s.email}`.toLowerCase();
       return row.includes(text);
     });
+
+    // Filter by Active Tab
+    if (activeTab === "published") {
+      list = list.filter((s) => s.portfolioStatus === "published");
+    }
+
     return list.sort((a, b) => {
       let va = "", vb = "";
       if (sortKey === "name") { va = `${a.firstName} ${a.lastName}`; vb = `${b.firstName} ${b.lastName}`; }
@@ -88,7 +106,7 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
       else if (sortKey === "portfolioStatus") { va = a.portfolioStatus ?? ""; vb = b.portfolioStatus ?? ""; }
       return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     });
-  }, [students, search, sortKey, sortAsc]);
+  }, [students, search, sortKey, sortAsc, activeTab]);
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortAsc(!sortAsc);
@@ -228,11 +246,42 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
     return colors[idx];
   };
 
+  const pageTitle = activeTab === "dashboard"
+    ? "Admin Dashboard"
+    : activeTab === "students"
+    ? "รายชื่อนักศึกษาทั้งหมด"
+    : activeTab === "published"
+    ? "Portfolio ที่เผยแพร่แล้ว"
+    : "การจัดการบัญชีนักศึกษา";
+
+  const pageDesc = activeTab === "dashboard"
+    ? "ภาพรวมนักศึกษา, สถิติระบบ, และสถานะ Portfolio ทั้งหมด"
+    : activeTab === "students"
+    ? `แสดงรายชื่อนักศึกษาทั้งหมดในระบบ (${students.length} บัญชี)`
+    : activeTab === "published"
+    ? `แสดงเฉพาะนักศึกษาที่เปิดเผยแพร่ Portfolio สู่สาธารณะแล้ว (${stats.published} ผลงาน)`
+    : "บริหารจัดการสิทธิ์บัญชีผู้ใช้ (ระงับ/เปิดใช้, รีเซ็ตรหัสผ่าน, ลบบัญชี, แก้ไขข้อมูล)";
+
   return (
-    <>
-      {/* ── Stats Row ─────────────────────── */}
+    <AdminShell
+      activeTab={activeTab}
+      onOpenAddStudent={() => setShowAddPanel(true)}
+      onOpenSettings={() => setShowSettingsModal(true)}
+      onSelectTab={(tab) => setActiveTab(tab as any)}
+      pageDesc={pageDesc}
+      pageTitle={pageTitle}
+      publishedCount={stats.published}
+      studentCount={stats.total}
+      user={user}
+    >
+      {/* ── Stats Row (Always visible in Dashboard & Overview) ── */}
       <div className="adm-stats-row">
-        <div className="adm-stat-card adm-stat-indigo">
+        <div
+          className={`adm-stat-card adm-stat-indigo ${activeTab === "students" ? "active-stat" : ""}`}
+          onClick={() => setActiveTab("students")}
+          style={{ cursor: "pointer" }}
+          title="คลิกเพื่อดูรายชื่อนักศึกษาทั้งหมด"
+        >
           <div className="adm-stat-card-row">
             <div className="adm-stat-icon-box">
               <Users size={20} />
@@ -244,10 +293,16 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
           </div>
           <div className="adm-stat-trend">
             <TrendingUp size={14} />
-            <span>บัญชีในระบบ</span>
+            <span>คลิกดูทั้งหมด →</span>
           </div>
         </div>
-        <div className="adm-stat-card adm-stat-green">
+
+        <div
+          className={`adm-stat-card adm-stat-green ${activeTab === "published" ? "active-stat" : ""}`}
+          onClick={() => setActiveTab("published")}
+          style={{ cursor: "pointer" }}
+          title="คลิกเพื่อดู Portfolio ที่เผยแพร่แล้ว"
+        >
           <div className="adm-stat-card-row">
             <div className="adm-stat-icon-box">
               <BookOpen size={20} />
@@ -259,9 +314,10 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
           </div>
           <div className="adm-stat-trend">
             <TrendingUp size={14} />
-            <span>Portfolio สาธารณะ</span>
+            <span>คลิกดูเผยแพร่แล้ว →</span>
           </div>
         </div>
+
         <div className="adm-stat-card adm-stat-amber">
           <div className="adm-stat-card-row">
             <div className="adm-stat-icon-box">
@@ -276,6 +332,7 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
             <span>กำลังออกแบบ</span>
           </div>
         </div>
+
         <div className="adm-stat-card adm-stat-slate">
           <div className="adm-stat-card-row">
             <div className="adm-stat-icon-box">
@@ -291,6 +348,48 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
           </div>
         </div>
       </div>
+
+      {/* Active Tab Notice Banner */}
+      {activeTab === "published" ? (
+        <div style={{
+          background: "#ECFDF5",
+          border: "1px solid #A7F3D0",
+          borderRadius: "10px",
+          padding: "12px 16px",
+          marginBottom: "16px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          color: "#065F46",
+          fontSize: "14px"
+        }}>
+          <span>
+            📌 <strong>กำลังกรอง:</strong> แสดงเฉพาะนักศึกษาที่เปิดเผยแพร่ Portfolio แล้ว ({stats.published} รายการ)
+          </span>
+          <button
+            className="btn"
+            onClick={() => setActiveTab("students")}
+            style={{ fontSize: "12px", padding: "4px 10px", background: "#FFFFFF" }}
+            type="button"
+          >
+            แสดงนักศึกษาทั้งหมด
+          </button>
+        </div>
+      ) : null}
+
+      {activeTab === "accounts" ? (
+        <div style={{
+          background: "#EFF6FF",
+          border: "1px solid #BFDBFE",
+          borderRadius: "10px",
+          padding: "12px 16px",
+          marginBottom: "16px",
+          color: "#1E40AF",
+          fontSize: "14px"
+        }}>
+          🛡️ <strong>โหมดจัดการบัญชี:</strong> คุณสามารถคลิกปุ่มเปิด/ปิดสถานะบัญชี, รีเซ็ตรหัสผ่าน, หรือแก้ไขข้อมูลนักศึกษาได้ทันทีในคอลัมน์ด้านขวาสุดของตาราง
+        </div>
+      ) : null}
 
       {/* ── Toolbar ───────────────────────── */}
       <div className="adm-card">
@@ -362,7 +461,7 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
                 <tr>
                   <td className="adm-empty-row" colSpan={7}>
                     <Users size={32} style={{ opacity: 0.3 }} />
-                    <span>{search ? `ไม่พบผลลัพธ์สำหรับ "${search}"` : "ยังไม่มีนักศึกษาในระบบ"}</span>
+                    <span>{search ? `ไม่พบผลลัพธ์สำหรับ "${search}"` : "ยังไม่มีนักศึกษาในรายการนี้"}</span>
                   </td>
                 </tr>
               ) : (
@@ -713,6 +812,71 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
           </div>
         </div>
       ) : null}
-    </>
+
+      {/* ── System Settings Modal ────────── */}
+      {showSettingsModal ? (
+        <div className="adm-drawer-overlay" onClick={() => setShowSettingsModal(false)}>
+          <div className="adm-drawer" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500 }}>
+            <div className="adm-drawer-header">
+              <div>
+                <h2>⚙️ การตั้งค่าและสถานะระบบ</h2>
+                <p>ข้อมูลสภาพแวดล้อมทางเทคนิคและสถิติเซิร์ฟเวอร์</p>
+              </div>
+              <button
+                className="adm-drawer-close"
+                onClick={() => setShowSettingsModal(false)}
+                type="button"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "14px 16px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                  <Database size={18} color="#2563eb" />
+                  <strong style={{ fontSize: "14px", color: "#1e293b" }}>ระบบฐานข้อมูล (MongoDB)</strong>
+                </div>
+                <p style={{ margin: 0, fontSize: "13px", color: "#475569" }}>
+                  สถานะ: <span style={{ color: "#059669", fontWeight: 700 }}>🟢 เชื่อมต่อแล้ว (Connected)</span><br />
+                  คอลเลกชันหลัก: <code>users</code>, <code>portfolios</code>, <code>sessions</code>
+                </p>
+              </div>
+
+              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "14px 16px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                  <ShieldCheck size={18} color="#7c3aed" />
+                  <strong style={{ fontSize: "14px", color: "#1e293b" }}>ความปลอดภัย (Security & Crypto)</strong>
+                </div>
+                <p style={{ margin: 0, fontSize: "13px", color: "#475569" }}>
+                  การเข้ารหัสผ่าน: <strong>scrypt with 16-byte random salt</strong><br />
+                  การลงนาม Session: <strong>HMAC-SHA256 Signed HttpOnly Cookie</strong>
+                </p>
+              </div>
+
+              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "14px 16px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                  <Server size={18} color="#059669" />
+                  <strong style={{ fontSize: "14px", color: "#1e293b" }}>เทคโนโลยี (Architecture)</strong>
+                </div>
+                <p style={{ margin: 0, fontSize: "13px", color: "#475569" }}>
+                  Frontend/Backend: <strong>Next.js 16 (Turbopack) + React 19</strong><br />
+                  เวอร์ชันระบบ: <strong>PFS v1.0.0 (Senior Project 1)</strong>
+                </p>
+              </div>
+            </div>
+            <div className="adm-drawer-footer">
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowSettingsModal(false)}
+                style={{ width: "100%" }}
+                type="button"
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </AdminShell>
   );
 }

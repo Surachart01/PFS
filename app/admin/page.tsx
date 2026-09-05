@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 
 import { AdminPanel } from "@/components/AdminPanel";
-import { AdminShell } from "@/components/AdminShell";
 import { getCurrentUser } from "@/lib/auth";
 import { getDb } from "@/lib/mongodb";
 import type { PortfolioDoc, UserDoc } from "@/lib/types";
@@ -36,17 +35,7 @@ export default async function AdminPage() {
     };
   });
 
-  const publishedCount = students.filter((s) => s.portfolioStatus === "published").length;
-
   return (
-    <AdminShell
-      pageDesc="ภาพรวมนักศึกษา, Portfolio และการจัดการบัญชี"
-      pageTitle="Admin Dashboard"
-      publishedCount={publishedCount}
-      studentCount={students.length}
-      user={user}
-    >
-      <AdminPanel initialStudents={students} />
-    </AdminShell>
+    <AdminPanel initialStudents={students} user={user} />
   );
 }

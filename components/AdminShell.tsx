@@ -3,6 +3,7 @@
 import {
   BookOpen,
   ChevronRight,
+  ExternalLink,
   GraduationCap,
   LayoutDashboard,
   LogOut,
@@ -12,15 +13,8 @@ import {
   Users
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-
-type NavItem = {
-  label: string;
-  href: string;
-  icon: React.ReactNode;
-  badge?: string | number;
-};
 
 type AdminShellProps = {
   children: React.ReactNode;
@@ -29,6 +23,10 @@ type AdminShellProps = {
   pageDesc?: string;
   studentCount?: number;
   publishedCount?: number;
+  activeTab?: string;
+  onSelectTab?: (tab: string) => void;
+  onOpenAddStudent?: () => void;
+  onOpenSettings?: () => void;
 };
 
 export function AdminShell({
@@ -37,31 +35,14 @@ export function AdminShell({
   pageTitle = "Dashboard",
   pageDesc,
   studentCount,
-  publishedCount
+  publishedCount,
+  activeTab = "dashboard",
+  onSelectTab,
+  onOpenAddStudent,
+  onOpenSettings
 }: AdminShellProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const [loggingOut, setLoggingOut] = useState(false);
-
-  const navItems: NavItem[] = [
-    {
-      label: "Dashboard",
-      href: "/admin",
-      icon: <LayoutDashboard size={18} />
-    },
-    {
-      label: "นักศึกษาทั้งหมด",
-      href: "/admin",
-      icon: <Users size={18} />,
-      badge: studentCount
-    },
-    {
-      label: "Portfolio สาธารณะ",
-      href: "/admin",
-      icon: <BookOpen size={18} />,
-      badge: publishedCount
-    }
-  ];
 
   async function logout() {
     setLoggingOut(true);
@@ -92,45 +73,83 @@ export function AdminShell({
 
         {/* Nav Items */}
         <nav className="admin-nav">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                className={`admin-nav-item ${isActive ? "active" : ""}`}
-                href={item.href}
-                key={item.label}
-              >
-                <span className="admin-nav-icon">{item.icon}</span>
-                <span className="admin-nav-text">{item.label}</span>
-                {item.badge !== undefined && item.badge !== 0 ? (
-                  <span className="admin-nav-badge">{item.badge}</span>
-                ) : null}
-                {isActive ? <ChevronRight size={14} className="admin-nav-chevron" /> : null}
-              </Link>
-            );
-          })}
+          <button
+            className={`admin-nav-item ${activeTab === "dashboard" ? "active" : ""}`}
+            onClick={() => onSelectTab?.("dashboard")}
+            type="button"
+          >
+            <span className="admin-nav-icon"><LayoutDashboard size={18} /></span>
+            <span className="admin-nav-text">Dashboard ภาพรวม</span>
+            {activeTab === "dashboard" ? <ChevronRight size={14} className="admin-nav-chevron" /> : null}
+          </button>
+
+          <button
+            className={`admin-nav-item ${activeTab === "students" ? "active" : ""}`}
+            onClick={() => onSelectTab?.("students")}
+            type="button"
+          >
+            <span className="admin-nav-icon"><Users size={18} /></span>
+            <span className="admin-nav-text">นักศึกษาทั้งหมด</span>
+            {studentCount !== undefined ? (
+              <span className="admin-nav-badge">{studentCount}</span>
+            ) : null}
+            {activeTab === "students" ? <ChevronRight size={14} className="admin-nav-chevron" /> : null}
+          </button>
+
+          <button
+            className={`admin-nav-item ${activeTab === "published" ? "active" : ""}`}
+            onClick={() => onSelectTab?.("published")}
+            type="button"
+          >
+            <span className="admin-nav-icon"><BookOpen size={18} /></span>
+            <span className="admin-nav-text">Portfolio สาธารณะ</span>
+            {publishedCount !== undefined ? (
+              <span className="admin-nav-badge">{publishedCount}</span>
+            ) : null}
+            {activeTab === "published" ? <ChevronRight size={14} className="admin-nav-chevron" /> : null}
+          </button>
+
+          <Link className="admin-nav-item" href="/dashboard" target="_blank">
+            <span className="admin-nav-icon"><ExternalLink size={18} /></span>
+            <span className="admin-nav-text">เปิดดูสารบบรวม</span>
+          </Link>
         </nav>
 
         <div className="admin-sidebar-divider" />
 
-        <span className="admin-nav-label">ระบบ</span>
+        <span className="admin-nav-label">การจัดการระบบ</span>
         <nav className="admin-nav">
-          <Link className="admin-nav-item" href="/admin">
-            <span className="admin-nav-icon">
-              <GraduationCap size={18} />
-            </span>
-            <span className="admin-nav-text">เพิ่มนักศึกษา</span>
-          </Link>
-          <Link className="admin-nav-item" href="/admin">
-            <span className="admin-nav-icon">
-              <UserPlus size={18} />
-            </span>
-            <span className="admin-nav-text">จัดการบัญชี</span>
-          </Link>
-          <button className="admin-nav-item" onClick={() => {}} type="button">
-            <span className="admin-nav-icon">
-              <Settings size={18} />
-            </span>
+          <button
+            className="admin-nav-item"
+            onClick={() => {
+              if (onOpenAddStudent) {
+                onOpenAddStudent();
+              } else {
+                onSelectTab?.("students");
+              }
+            }}
+            type="button"
+          >
+            <span className="admin-nav-icon"><GraduationCap size={18} /></span>
+            <span className="admin-nav-text">เพิ่มนักศึกษาใหม่</span>
+          </button>
+
+          <button
+            className={`admin-nav-item ${activeTab === "accounts" ? "active" : ""}`}
+            onClick={() => onSelectTab?.("accounts")}
+            type="button"
+          >
+            <span className="admin-nav-icon"><UserPlus size={18} /></span>
+            <span className="admin-nav-text">จัดการบัญชีผู้ใช้</span>
+            {activeTab === "accounts" ? <ChevronRight size={14} className="admin-nav-chevron" /> : null}
+          </button>
+
+          <button
+            className="admin-nav-item"
+            onClick={() => onOpenSettings?.()}
+            type="button"
+          >
+            <span className="admin-nav-icon"><Settings size={18} /></span>
             <span className="admin-nav-text">ตั้งค่าระบบ</span>
           </button>
         </nav>
@@ -165,6 +184,14 @@ export function AdminShell({
             {pageDesc ? <p className="admin-page-desc">{pageDesc}</p> : null}
           </div>
           <div className="admin-topbar-actions">
+            <button
+              className="btn btn-primary"
+              onClick={() => onOpenAddStudent?.()}
+              style={{ fontSize: "13px" }}
+              type="button"
+            >
+              + เพิ่มนักศึกษา
+            </button>
             <div className="admin-topbar-avatar" title={`${user.firstName} ${user.lastName}`}>
               {initials}
             </div>
