@@ -12,6 +12,8 @@
 2. **Student Zone (นักศึกษา)**
 3. **Admin Zone (ผู้ดูแลระบบ)**
 
+![Sitemap & Navigation Hierarchy](diagrams/sitemap-diagram.png)
+
 ```text
                                 [ PFS Web Application ]
                                            │

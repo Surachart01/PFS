@@ -17,6 +17,8 @@
 
 ## 2. รายการ Use Case ทั้งหมดในระบบ
 
+![Use Case Diagram](diagrams/use-case-diagram.png)
+
 ```
 [Student] ───┬── UC-01: เข้าสู่ระบบ (Login)
              ├── UC-02: ออกจากระบบ (Logout)

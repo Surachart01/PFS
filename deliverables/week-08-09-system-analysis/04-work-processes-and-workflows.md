@@ -9,6 +9,8 @@
 
 กระบวนการตรวจสอบข้อมูลยืนยันตัวตนของผู้ใช้งาน พร้อมจำแนกสิทธิ์เพื่อส่งต่อไปยังหน้าจอการทำงานที่ถูกต้อง
 
+![Workflow: Login & Authentication Flow](diagrams/workflow-login-auth.png)
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -48,6 +50,8 @@ sequenceDiagram
 
 กระบวนการทำงานของนักศึกษาในการจัดวางบล็อกบนตารางกริด 12 คอลัมน์ จนถึงการสร้าง URL เผยแพร่
 
+![Workflow: Student Portfolio Builder & Publishing](diagrams/workflow-portfolio-builder.png)
+
 ```mermaid
 flowchart TD
     Start([เริ่ม: นักศึกษาเข้าหน้า /student/editor]) --> LoadData[โหลดข้อมูล Portfolio เดิม หรือสร้างใหม่อัตโนมัติ]
@@ -81,6 +85,8 @@ flowchart TD
 ## 3. กระบวนการที่ 3: การบริหารจัดการนักศึกษาโดยผู้ดูแลระบบ (Admin Student Management Flow)
 
 กระบวนการที่ผู้ดูแลระบบดูแลบัญชีผู้ใช้งานและกำกับติดตามการส่งงาน
+
+![Workflow: Admin Student & Account Management](diagrams/workflow-admin-management.png)
 
 ```mermaid
 flowchart TD

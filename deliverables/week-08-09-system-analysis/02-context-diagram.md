@@ -14,7 +14,11 @@ Context Diagram (หรือ Data Flow Diagram Level 0) แสดงขอบ�
 
 ---
 
-## 2. แผนภาพแสดงการไหลของข้อมูล (Mermaid Diagram)
+## 2. แผนภาพแสดงการไหลของข้อมูล (Context Diagram)
+
+![Context Diagram (DFD Level 0)](diagrams/context-diagram.png)
+
+### 2.1 โค้ดแผนภาพเชิงแนวคิด (Mermaid Diagram)
 
 ```mermaid
 flowchart TD
