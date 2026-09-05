@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { StudentAccountManager } from "@/components/StudentAccountManager";
 import { StudentShell } from "@/components/StudentShell";
 import { getCurrentUser } from "@/lib/auth";
 import { getOrCreatePortfolio, serializePortfolio } from "@/lib/portfolio";
@@ -224,6 +225,9 @@ export default async function StudentDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Account Profile & Security Management */}
+      <StudentAccountManager user={user} />
     </StudentShell>
   );
 }

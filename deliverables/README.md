@@ -1,0 +1,19 @@
+# 📦 เอกสารและชิ้นงานส่งมอบ (Project Deliverables Index)
+
+**โครงการ:** ระบบ Portfolio ออนไลน์สำหรับนักศึกษาวิศวกรรมคอมพิวเตอร์ (Online Portfolio & Resume Builder - PFS)  
+**รายวิชา:** โครงงานวิศวกรรมคอมพิวเตอร์ 1 (Computer Engineering Senior Project I)
+
+เอกสารและผลงานทั้งหมดได้รับการจัดระเบียบแยกเป็นโฟลเดอร์ตามลำดับสัปดาห์ที่กำหนดส่งงานดังต่อไปนี้:
+
+---
+
+## 🗂️ โครงสร้างโฟลเดอร์ผลงาน (Deliverables Structure)
+
+| โฟลเดอร์ | สัปดาห์ | หัวข้องานตามกำหนด | สถานะ | เอกสารและผลงานที่ส่งมอบ |
+|---|:---:|---|:---:|---|
+| [`week-08-09-system-analysis/`](file:///Users/surachartlimrattanaphun/Desktop/PFS/deliverables/week-08-09-system-analysis/) | **8-9** | **ออกแบบ Use Case, Context Diagram, Sitemap และกระบวนการทำงาน** | ✅ ครบ 100% | • [Use Case Specification](file:///Users/surachartlimrattanaphun/Desktop/PFS/deliverables/week-08-09-system-analysis/01-use-case-specification.md)<br>• [Context Diagram (DFD 0)](file:///Users/surachartlimrattanaphun/Desktop/PFS/deliverables/week-08-09-system-analysis/02-context-diagram.md)<br>• [Sitemap Hierarchy](file:///Users/surachartlimrattanaphun/Desktop/PFS/deliverables/week-08-09-system-analysis/03-sitemap-and-navigation.md)<br>• [Workflows & Processes](file:///Users/surachartlimrattanaphun/Desktop/PFS/deliverables/week-08-09-system-analysis/04-work-processes-and-workflows.md)<br>• [ไดอะแกรมภาพความละเอียดสูง 6 ภาพ](file:///Users/surachartlimrattanaphun/Desktop/PFS/deliverables/week-08-09-system-analysis/diagrams/) |
+| *(ข้ามตามคำสั่ง)* | **10-11** | **ออกแบบ UI/UX และ Prototype** | ⏸️ พักไว้ | *(มีตัวเว็บจริงและ UI สำเร็จรูปที่รันได้ในโค้ดโปรเจกต์)* |
+| [`week-12-database-design/`](file:///Users/surachartlimrattanaphun/Desktop/PFS/deliverables/week-12-database-design/) | **12** | **ออกแบบฐานข้อมูลและ Data Dictionary** | ✅ ครบ 100% | • [แบบจำลองข้อมูลและสถาปัตยกรรม ERD](file:///Users/surachartlimrattanaphun/Desktop/PFS/deliverables/week-12-database-design/01-database-design-and-erd.md)<br>• [พจนานุกรมข้อมูลฉบับสมบูรณ์ (Data Dictionary)](file:///Users/surachartlimrattanaphun/Desktop/PFS/deliverables/week-12-database-design/02-data-dictionary.md)<br>• [แผนภาพ ERD ความละเอียดสูง](file:///Users/surachartlimrattanaphun/Desktop/PFS/deliverables/week-12-database-design/diagrams/portfolio-erd.png) |
+| *(ซอร์สโค้ดในโปรเจกต์)* | **13-14** | **พัฒนาระบบยืนยันตัวตน ข้อมูลส่วนตัว และสิทธิ์ผู้ใช้งาน** | ✅ พัฒนาครบ 100% | • ระบบ Login / Logout Cookie Session (`lib/auth.ts`)<br>• API เปลี่ยนรหัสผ่าน (`/api/auth/change-password`)<br>• API จัดการข้อมูลส่วนตัว (`/api/user/profile`)<br>• Modal แก้ไขโปรไฟล์และเปลี่ยนรหัสผ่านใน Student Dashboard |
+| *(ซอร์สโค้ดในโปรเจกต์)* | **15** | **พัฒนา Dashboard และระบบจัดการบัญชีเบื้องต้น** | ✅ พัฒนาครบ 100% | • Student Dashboard (`/student`) แสดงสถิติและสถานะผลงาน<br>• Admin Dashboard (`/admin`) พร้อม Full CRUD จัดการบัญชี<br>• ฟังก์ชันแก้ไขข้อมูลนักศึกษา, สลับ Active/Inactive, รีเซ็ตรหัสผ่าน, ลบบัญชี<br>• หน้า Admin ตรวจแบบร่าง Portfolio นักศึกษา (`/admin/preview/[userId]`) |
+| [`week-16-testing-and-summary/`](file:///Users/surachartlimrattanaphun/Desktop/PFS/deliverables/week-16-testing-and-summary/) | **16** | **ทดสอบฟังก์ชันพื้นฐานและสรุปผลภาคเรียนที่ 1** | ✅ ครบ 100% | • [แผนการทดสอบและ Test Cases 30 รายการ](file:///Users/surachartlimrattanaphun/Desktop/PFS/deliverables/week-16-testing-and-summary/01-test-plan-and-test-cases.md)<br>• [ตารางบันทึกผลการทดสอบผ่าน 100%](file:///Users/surachartlimrattanaphun/Desktop/PFS/deliverables/week-16-testing-and-summary/02-test-results-matrix.md)<br>• [รายงานสรุปผลการดำเนินงานภาคเรียนที่ 1](file:///Users/surachartlimrattanaphun/Desktop/PFS/deliverables/week-16-testing-and-summary/03-semester-1-summary-report.md)<br>• [สคริปต์รัน Automated Smoke Test](file:///Users/surachartlimrattanaphun/Desktop/PFS/deliverables/week-16-testing-and-summary/run-smoke-test.mjs) |

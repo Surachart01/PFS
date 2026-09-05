@@ -4,10 +4,15 @@ import {
   BookOpen,
   ChevronDown,
   ChevronUp,
+  Edit2,
   ExternalLink,
+  Eye,
+  KeyRound,
   Plus,
+  Power,
   RefreshCw,
   Search,
+  Trash2,
   TrendingUp,
   Users,
   X
@@ -38,15 +43,27 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
   const [showAddPanel, setShowAddPanel] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<AdminStudent | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortAsc, setSortAsc] = useState(true);
 
+  // Add form state
   const [form, setForm] = useState({
     studentId: "",
     firstName: "",
     lastName: "",
     email: "",
     password: "",
+    department: "Computer Engineering",
+    year: "1"
+  });
+
+  // Edit form state
+  const [editForm, setEditForm] = useState({
+    studentId: "",
+    firstName: "",
+    lastName: "",
+    email: "",
     department: "Computer Engineering",
     year: "1"
   });
@@ -114,6 +131,94 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
     await reload();
   }
 
+  function openEditModal(student: AdminStudent) {
+    setEditingStudent(student);
+    setEditForm({
+      studentId: student.studentId || "",
+      firstName: student.firstName,
+      lastName: student.lastName,
+      email: student.email,
+      department: student.department || "Computer Engineering",
+      year: String(student.year || 1)
+    });
+  }
+
+  async function handleUpdateStudent(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editingStudent) return;
+    setLoading(true);
+
+    const res = await fetch(`/api/students/${editingStudent.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...editForm, year: Number(editForm.year) })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    setLoading(false);
+
+    if (!res.ok) {
+      alert(data.message || "แก้ไขข้อมูลไม่สำเร็จ");
+      return;
+    }
+
+    setEditingStudent(null);
+    await reload();
+  }
+
+  async function handleToggleStatus(student: AdminStudent) {
+    const next = student.status === "active" ? "ปิดใช้งาน" : "เปิดใช้งาน";
+    if (!confirm(`ต้องการ ${next} บัญชีของ "${student.firstName} ${student.lastName}" หรือไม่?`)) return;
+
+    const res = await fetch(`/api/students/${student.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "toggle-status" })
+    });
+
+    if (res.ok) {
+      await reload();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert(data.message || "ไม่สามารถเปลี่ยนสถานะได้");
+    }
+  }
+
+  async function handleResetPassword(student: AdminStudent) {
+    const newPass = prompt(`กรุณากรอกรหัสผ่านใหม่สำหรับ ${student.firstName} ${student.lastName} (เว้นว่าง = ใช้รหัสนักศึกษา):`, student.studentId || "Student@1234");
+    if (newPass === null) return;
+
+    const res = await fetch(`/api/students/${student.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "reset-password", password: newPass })
+    });
+
+    if (res.ok) {
+      alert(`✅ รีเซ็ตรหัสผ่านของ ${student.firstName} เรียบร้อยแล้ว!`);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert(data.message || "รีเซ็ตรหัสผ่านไม่สำเร็จ");
+    }
+  }
+
+  async function handleDeleteStudent(student: AdminStudent) {
+    if (!confirm(`⚠️ ยืนยันการลบบัญชีนักศึกษา "${student.firstName} ${student.lastName}" (${student.studentId})?\nการกระทำนี้จะลบทั้งบัญชีและผลงาน Portfolio ทั้งหมดออกจากระบบอย่างถาวร!`)) {
+      return;
+    }
+
+    const res = await fetch(`/api/students/${student.id}`, {
+      method: "DELETE"
+    });
+
+    if (res.ok) {
+      await reload();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert(data.message || "ลบบัญชีไม่สำเร็จ");
+    }
+  }
+
   const initials = (s: AdminStudent) =>
     `${s.firstName[0] ?? ""}${s.lastName[0] ?? ""}`.toUpperCase();
 
@@ -139,7 +244,7 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
           </div>
           <div className="adm-stat-trend">
             <TrendingUp size={14} />
-            <span>บัญชีที่ใช้งาน</span>
+            <span>บัญชีในระบบ</span>
           </div>
         </div>
         <div className="adm-stat-card adm-stat-green">
@@ -168,7 +273,7 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
             </div>
           </div>
           <div className="adm-stat-trend">
-            <span>กำลังดำเนินการ</span>
+            <span>กำลังออกแบบ</span>
           </div>
         </div>
         <div className="adm-stat-card adm-stat-slate">
@@ -186,7 +291,6 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
           </div>
         </div>
       </div>
-
 
       {/* ── Toolbar ───────────────────────── */}
       <div className="adm-card">
@@ -233,7 +337,7 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
                   <span>นักศึกษา</span>
                   <SortIcon col="name" />
                 </th>
-                <th>อีเมล</th>
+                <th>อีเมล / สาขา</th>
                 <th
                   className="adm-th-sortable"
                   onClick={() => toggleSort("year")}
@@ -241,7 +345,7 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
                   <span>ชั้นปี</span>
                   <SortIcon col="year" />
                 </th>
-                <th>บัญชี</th>
+                <th>สถานะบัญชี</th>
                 <th
                   className="adm-th-sortable"
                   onClick={() => toggleSort("portfolioStatus")}
@@ -249,13 +353,14 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
                   <span>Portfolio</span>
                   <SortIcon col="portfolioStatus" />
                 </th>
-                <th>ลิงก์</th>
+                <th>ตรวจผลงาน</th>
+                <th style={{ textAlign: "center" }}>จัดการบัญชี</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td className="adm-empty-row" colSpan={6}>
+                  <td className="adm-empty-row" colSpan={7}>
                     <Users size={32} style={{ opacity: 0.3 }} />
                     <span>{search ? `ไม่พบผลลัพธ์สำหรับ "${search}"` : "ยังไม่มีนักศึกษาในระบบ"}</span>
                   </td>
@@ -279,7 +384,12 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
                         </div>
                       </div>
                     </td>
-                    <td className="adm-td-muted">{s.email}</td>
+                    <td>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <span className="adm-td-muted" style={{ fontSize: "13px" }}>{s.email}</span>
+                        <span style={{ fontSize: "11px", color: "#64748b" }}>{s.department || "Computer Engineering"}</span>
+                      </div>
+                    </td>
                     <td>
                       {s.year ? (
                         <span className="adm-year-badge">{YEAR_LABELS[s.year] ?? `ปี ${s.year}`}</span>
@@ -288,7 +398,16 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
                       )}
                     </td>
                     <td>
-                      <span className={`adm-status ${s.status}`}>{s.status === "active" ? "ใช้งาน" : "ปิดใช้"}</span>
+                      <button
+                        className={`adm-status ${s.status}`}
+                        onClick={() => handleToggleStatus(s)}
+                        style={{ border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                        title="คลิกเพื่อสลับสถานะเปิด/ปิดบัญชี"
+                        type="button"
+                      >
+                        <Power size={11} />
+                        {s.status === "active" ? "ใช้งาน" : "ระงับใช้"}
+                      </button>
                     </td>
                     <td>
                       <span className={`adm-status ${s.portfolioStatus ?? "none"}`}>
@@ -300,19 +419,64 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
                       </span>
                     </td>
                     <td>
-                      {s.portfolioSlug && s.portfolioStatus === "published" ? (
-                        <a
-                          className="adm-link-btn"
-                          href={`/r/${s.portfolioSlug}`}
-                          rel="noopener noreferrer"
-                          target="_blank"
-                        >
-                          <ExternalLink size={13} />
-                          เปิดดู
-                        </a>
+                      {s.portfolioStatus ? (
+                        <div style={{ display: "flex", gap: "6px" }}>
+                          {s.portfolioStatus === "published" && s.portfolioSlug ? (
+                            <a
+                              className="adm-link-btn"
+                              href={`/r/${s.portfolioSlug}`}
+                              rel="noopener noreferrer"
+                              target="_blank"
+                              title="เปิดดูหน้าสาธารณะ"
+                            >
+                              <ExternalLink size={12} />
+                              เปิดดู
+                            </a>
+                          ) : null}
+                          <a
+                            className="adm-link-btn"
+                            href={`/admin/preview/${s.id}`}
+                            style={{ background: "#EEF2FF", color: "#3730A3" }}
+                            title="ตรวจผลงานและแบบร่าง"
+                          >
+                            <Eye size={12} />
+                            ตรวจงาน
+                          </a>
+                        </div>
                       ) : (
-                        <span className="adm-td-muted">—</span>
+                        <span className="adm-td-muted" style={{ fontSize: "12px" }}>ยังไม่มีงาน</span>
                       )}
+                    </td>
+                    <td style={{ textAlign: "center" }}>
+                      <div style={{ display: "inline-flex", gap: "6px" }}>
+                        <button
+                          className="btn"
+                          onClick={() => openEditModal(s)}
+                          style={{ padding: "4px 8px", fontSize: "12px" }}
+                          title="แก้ไขข้อมูลนักศึกษา"
+                          type="button"
+                        >
+                          <Edit2 size={13} />
+                        </button>
+                        <button
+                          className="btn"
+                          onClick={() => handleResetPassword(s)}
+                          style={{ padding: "4px 8px", fontSize: "12px" }}
+                          title="รีเซ็ตรหัสผ่าน"
+                          type="button"
+                        >
+                          <KeyRound size={13} />
+                        </button>
+                        <button
+                          className="btn"
+                          onClick={() => handleDeleteStudent(s)}
+                          style={{ padding: "4px 8px", fontSize: "12px", color: "#EF4444", borderColor: "#FCA5A5" }}
+                          title="ลบบัญชีนักศึกษา"
+                          type="button"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -440,6 +604,109 @@ export function AdminPanel({ initialStudents }: { initialStudents: AdminStudent[
                 <button className="btn btn-primary" disabled={loading} type="submit">
                   <Plus size={16} />
                   {loading ? "กำลังเพิ่ม..." : "เพิ่มนักศึกษา"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {/* ── Edit Student Modal ────────── */}
+      {editingStudent ? (
+        <div className="adm-drawer-overlay" onClick={() => setEditingStudent(null)}>
+          <div className="adm-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="adm-drawer-header">
+              <div>
+                <h2>แก้ไขข้อมูลนักศึกษา</h2>
+                <p>ปรับปรุงข้อมูลประจำตัวของนักศึกษาในระบบ</p>
+              </div>
+              <button
+                className="adm-drawer-close"
+                onClick={() => setEditingStudent(null)}
+                type="button"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <form className="adm-drawer-form" onSubmit={handleUpdateStudent}>
+              <div className="adm-form-row">
+                <div className="field">
+                  <label htmlFor="edit-studentId">รหัสนักศึกษา</label>
+                  <input
+                    className="input"
+                    id="edit-studentId"
+                    onChange={(e) => setEditForm({ ...editForm, studentId: e.target.value })}
+                    required
+                    value={editForm.studentId}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="edit-year">ชั้นปี</label>
+                  <select
+                    className="select"
+                    id="edit-year"
+                    onChange={(e) => setEditForm({ ...editForm, year: e.target.value })}
+                    value={editForm.year}
+                  >
+                    <option value="1">ปี 1</option>
+                    <option value="2">ปี 2</option>
+                    <option value="3">ปี 3</option>
+                    <option value="4">ปี 4</option>
+                  </select>
+                </div>
+              </div>
+              <div className="adm-form-row">
+                <div className="field">
+                  <label htmlFor="edit-firstName">ชื่อ</label>
+                  <input
+                    className="input"
+                    id="edit-firstName"
+                    onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
+                    required
+                    value={editForm.firstName}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="edit-lastName">นามสกุล</label>
+                  <input
+                    className="input"
+                    id="edit-lastName"
+                    onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
+                    required
+                    value={editForm.lastName}
+                  />
+                </div>
+              </div>
+              <div className="field">
+                <label htmlFor="edit-email">อีเมล</label>
+                <input
+                  className="input"
+                  id="edit-email"
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  required
+                  type="email"
+                  value={editForm.email}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="edit-department">สาขา/ภาควิชา</label>
+                <input
+                  className="input"
+                  id="edit-department"
+                  onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
+                  value={editForm.department}
+                />
+              </div>
+              <div className="adm-drawer-footer">
+                <button
+                  className="btn"
+                  onClick={() => setEditingStudent(null)}
+                  type="button"
+                >
+                  ยกเลิก
+                </button>
+                <button className="btn btn-primary" disabled={loading} type="submit">
+                  {loading ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
                 </button>
               </div>
             </form>
