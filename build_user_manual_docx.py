@@ -2,7 +2,7 @@ import os
 import docx
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
+from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 
@@ -24,7 +24,6 @@ def set_cell_margins(cell, top=140, bottom=140, left=200, right=200):
     tcPr.append(tcMar)
 
 def set_callout_border(cell, color_hex="2563EB", border_size="36"):
-    # Left border thick, others none
     tcPr = cell._tc.get_or_add_tcPr()
     tcBorders = parse_xml(
         f'<w:tcBorders {nsdecls("w")}>\n'
@@ -59,16 +58,16 @@ def add_callout(doc, title, text, style="tip"):
     cell.width = Inches(6.5)
     
     if style == "tip":
-        bg_color = "F0FDF4"      # Light green
-        border_color = "16A34A"  # Green
+        bg_color = "F0FDF4"
+        border_color = "16A34A"
         icon = "💡 ข้อแนะนำพิเศษ (Pro-Tip): "
     elif style == "important":
-        bg_color = "FEF2F2"      # Light red
-        border_color = "DC2626"  # Red
+        bg_color = "FEF2F2"
+        border_color = "DC2626"
         icon = "⚠️ ข้อควรระวังสำคัญ (Important): "
-    else: # note
-        bg_color = "EFF6FF"      # Light blue
-        border_color = "2563EB"  # Blue
+    else:
+        bg_color = "EFF6FF"
+        border_color = "2563EB"
         icon = "📌 ข้อมูลเพิ่มเติม (Note): "
         
     set_cell_background(cell, bg_color)
@@ -83,7 +82,7 @@ def add_callout(doc, title, text, style="tip"):
     run_icon = p.add_run(icon)
     run_icon.bold = True
     run_icon.font.size = Pt(10.5)
-    run_icon.font.name = "TH Sarabun New" if "TH Sarabun New" else "Arial"
+    run_icon.font.name = "TH Sarabun New"
     if style == "tip":
         run_icon.font.color.rgb = RGBColor(22, 163, 74)
     elif style == "important":
@@ -109,23 +108,23 @@ def add_heading_styled(doc, text, level=1):
         h.paragraph_format.space_before = Pt(18)
         h.paragraph_format.space_after = Pt(6)
         for r in h.runs:
-            r.font.size = Pt(18)
+            r.font.size = Pt(17)
             r.bold = True
-            r.font.color.rgb = RGBColor(30, 58, 138) # Navy Blue
+            r.font.color.rgb = RGBColor(30, 58, 138)
     elif level == 2:
-        h.paragraph_format.space_before = Pt(14)
+        h.paragraph_format.space_before = Pt(13)
         h.paragraph_format.space_after = Pt(4)
         for r in h.runs:
-            r.font.size = Pt(15)
+            r.font.size = Pt(14)
             r.bold = True
-            r.font.color.rgb = RGBColor(3, 105, 161) # Sky Blue Dark
+            r.font.color.rgb = RGBColor(3, 105, 161)
     elif level == 3:
-        h.paragraph_format.space_before = Pt(10)
+        h.paragraph_format.space_before = Pt(9)
         h.paragraph_format.space_after = Pt(3)
         for r in h.runs:
-            r.font.size = Pt(13)
+            r.font.size = Pt(12.5)
             r.bold = True
-            r.font.color.rgb = RGBColor(51, 65, 85) # Slate
+            r.font.color.rgb = RGBColor(51, 65, 85)
     return h
 
 def add_paragraph_styled(doc, text="", bold_prefix=None, space_after=4):
@@ -137,12 +136,12 @@ def add_paragraph_styled(doc, text="", bold_prefix=None, space_after=4):
         r_pre = p.add_run(bold_prefix)
         r_pre.bold = True
         r_pre.font.name = "TH Sarabun New"
-        r_pre.font.size = Pt(12)
+        r_pre.font.size = Pt(11.5)
         r_pre.font.color.rgb = RGBColor(15, 23, 42)
     if text:
         r_txt = p.add_run(text)
         r_txt.font.name = "TH Sarabun New"
-        r_txt.font.size = Pt(12)
+        r_txt.font.size = Pt(11.5)
         r_txt.font.color.rgb = RGBColor(51, 65, 85)
     return p
 
@@ -155,12 +154,12 @@ def add_bullet_styled(doc, text="", bold_prefix=None):
         r_pre = p.add_run(bold_prefix)
         r_pre.bold = True
         r_pre.font.name = "TH Sarabun New"
-        r_pre.font.size = Pt(12)
+        r_pre.font.size = Pt(11.5)
         r_pre.font.color.rgb = RGBColor(15, 23, 42)
     if text:
         r_txt = p.add_run(text)
         r_txt.font.name = "TH Sarabun New"
-        r_txt.font.size = Pt(12)
+        r_txt.font.size = Pt(11.5)
         r_txt.font.color.rgb = RGBColor(51, 65, 85)
     return p
 
@@ -173,7 +172,6 @@ def add_screenshot_box(doc, img_path, caption):
     p_img.paragraph_format.space_before = Pt(8)
     p_img.paragraph_format.space_after = Pt(2)
     
-    # 6.2 inches fits nicely inside standard margins
     run = p_img.add_run()
     run.add_picture(img_path, width=Inches(6.3))
     
@@ -189,56 +187,53 @@ def add_screenshot_box(doc, img_path, caption):
     r_cap.font.color.rgb = RGBColor(100, 116, 139)
 
 def build_docx():
-    print("Creating Document...")
+    print("Creating Document with complete function-by-function instructions...")
     doc = docx.Document()
     
-    # Set Margins (0.75 inch for a clean, spacious look)
-    sections = doc.sections
-    for s in sections:
+    # Margins
+    for s in doc.sections:
         s.top_margin = Inches(0.75)
         s.bottom_margin = Inches(0.75)
         s.left_margin = Inches(0.85)
         s.right_margin = Inches(0.85)
         
-        # Add Header & Footer
-        header = s.header
-        hp = header.paragraphs[0]
+        # Header & Footer
+        hp = s.header.paragraphs[0]
         hp.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-        hrun = hp.add_run("PFS - Portfolio & Resume System | คู่มือการใช้งานสำหรับผู้ใช้ทั่วไป")
+        hrun = hp.add_run("PFS - Portfolio & Resume System | คู่มือการใช้งานฟังก์ชันระบบอย่างละเอียด")
         hrun.font.name = "TH Sarabun New"
         hrun.font.size = Pt(9)
         hrun.font.color.rgb = RGBColor(148, 163, 184)
         
-        footer = s.footer
-        fp = footer.paragraphs[0]
+        fp = s.footer.paragraphs[0]
         fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        frun = fp.add_run("ภาควิชาวิศวกรรมคอมพิวเตอร์ — ระบบแฟ้มสะสมผลงานดิจิทัล (หน้าแสดงเอกสาร)")
+        frun = fp.add_run("ภาควิชาวิศวกรรมคอมพิวเตอร์ — ระบบแฟ้มสะสมผลงานดิจิทัล (เอกสารคู่มือการใช้งาน)")
         frun.font.name = "TH Sarabun New"
         frun.font.size = Pt(9)
         frun.font.color.rgb = RGBColor(148, 163, 184)
 
     # -------------------------------------------------------------
-    # COVER / TITLE BANNER
+    # COVER BANNER
     # -------------------------------------------------------------
     tbl_title = doc.add_table(rows=1, cols=1)
     tbl_title.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_title.autofit = False
     c_title = tbl_title.cell(0, 0)
     c_title.width = Inches(6.8)
-    set_cell_background(c_title, "0F172A") # Slate 900
+    set_cell_background(c_title, "0F172A")
     set_cell_margins(c_title, top=280, bottom=260, left=320, right=320)
     
     p_badge = c_title.paragraphs[0]
     p_badge.paragraph_format.space_after = Pt(4)
-    r_badge = p_badge.add_run("OFFICIAL USER MANUAL & GUIDE")
+    r_badge = p_badge.add_run("OFFICIAL USER MANUAL & FUNCTION GUIDE")
     r_badge.font.name = "Arial"
     r_badge.font.size = Pt(9.5)
     r_badge.bold = True
-    r_badge.font.color.rgb = RGBColor(56, 189, 248) # Sky blue
+    r_badge.font.color.rgb = RGBColor(56, 189, 248)
     
     p_main = c_title.add_paragraph()
     p_main.paragraph_format.space_after = Pt(4)
-    r_main = p_main.add_run("คู่มือการใช้งานระบบแฟ้มสะสมผลงานออนไลน์\n(PFS - Portfolio & Resume System)")
+    r_main = p_main.add_run("คู่มือการใช้งานระบบแฟ้มสะสมผลงานออนไลน์\nและคำอธิบายฟังก์ชันการทำงานทีละขั้นตอน")
     r_main.font.name = "TH Sarabun New"
     r_main.font.size = Pt(22)
     r_main.bold = True
@@ -246,7 +241,7 @@ def build_docx():
     
     p_sub = c_title.add_paragraph()
     p_sub.paragraph_format.space_after = Pt(0)
-    r_sub = p_sub.add_run("คู่มือฉบับเข้าใจง่ายทีละขั้นตอน พร้อมภาพถ่ายหน้าจอระบบจริง (Real Screenshots)\nสำหรับนักศึกษา, อาจารย์ที่ปรึกษา, ฝ่ายทะเบียน และผู้ใช้งานทั่วไป")
+    r_sub = p_sub.add_run("PFS - Portfolio & Resume System for Computer Engineering Students\nครอบคลุมทุกบทบาท: นักศึกษา, อาจารย์ที่ปรึกษา, กรรมการตรวจงาน และนายจ้าง")
     r_sub.font.name = "TH Sarabun New"
     r_sub.font.size = Pt(11.5)
     r_sub.font.color.rgb = RGBColor(203, 213, 225)
@@ -300,16 +295,15 @@ def build_docx():
     
     add_paragraph_styled(
         doc,
-        "คือ เว็บไซต์ที่ช่วยให้นักศึกษาสามารถจัดทำ เรซูเม่ (Resume) และ แฟ้มสะสมผลงาน (Portfolio) รูปแบบดิจิทัลได้อย่างสวยงาม รวดเร็ว และเป็นมืออาชีพ ผ่านหน้าจอเว็บเบราว์เซอร์ โดยไม่ต้องมีความรู้ด้านการเขียนโค้ด ไม่ต้องติดตั้งโปรแกรมลงในคอมพิวเตอร์ และไม่ต้องเสียเวลาจัดหน้าใน Word หรือ Photoshop ให้ยุ่งยาก",
+        "คือ เว็บแอปพลิเคชันที่ช่วยให้นักศึกษาสามารถจัดทำ เรซูเม่ (Resume) และ แฟ้มสะสมผลงาน (Portfolio) ดิจิทัลได้อย่างสวยงาม รวดเร็ว และเป็นมืออาชีพ ผ่านหน้าต่างเว็บเบราว์เซอร์ โดยไม่ต้องมีความรู้ด้านการเขียนโค้ด ไม่ต้องติดตั้งโปรแกรมลงในคอมพิวเตอร์ และไม่ต้องจัดหน้า Word หรือ Photoshop ให้เสียเวลา",
         bold_prefix="ระบบ PFS (Portfolio System) "
     )
-    
     add_paragraph_styled(
         doc,
-        "เมื่อนักศึกษากรอกข้อมูลและตกแต่งเสร็จเรียบร้อย ระบบจะออก ลิงก์ผลงานส่วนบุคคล (Public URL เช่น https://portfolio.pfs.local/r/somchai-portfolio) ให้นักศึกษาสามารถคัดลอกนำไปส่งให้อาจารย์ที่ปรึกษาตรวจ หรือแนบในอีเมลสมัครงานกับบริษัทชั้นนำได้ทันที"
+        "เมื่อตกแต่งเสร็จ ระบบจะออก 'ลิงก์ผลงานส่วนบุคคล' (Public URL) ให้นำไปส่งอาจารย์ตรวจ หรือแนบในใบสมัครงานกับบริษัทได้ทันที พร้อมระบบ Responsive ที่ปรับขนาดให้อ่านง่ายบนมือถือและแท็บเล็ตอัตโนมัติ"
     )
     
-    add_heading_styled(doc, "👥 ใครใช้งานระบบนี้บ้าง? (3 บทบาทหลัก)", level=2)
+    add_heading_styled(doc, "👥 ภาพรวมผู้ใช้งาน 3 บทบาทหลัก", level=2)
     
     role_tbl = doc.add_table(rows=4, cols=3)
     role_tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -318,7 +312,7 @@ def build_docx():
     headers = ["บทบาทผู้ใช้งาน", "ใครคือผู้ใช้?", "หน้าที่และการทำงานในระบบ"]
     for j, h_text in enumerate(headers):
         c = role_tbl.cell(0, j)
-        set_cell_background(c, "1E3A8A") # Dark blue
+        set_cell_background(c, "1E3A8A")
         set_cell_margins(c, 120, 120, 160, 160)
         p = c.paragraphs[0]
         p.paragraph_format.space_after = Pt(0)
@@ -329,9 +323,9 @@ def build_docx():
         r.font.color.rgb = RGBColor(255, 255, 255)
         
     roles_data = [
-        ("🎓 นักศึกษา (Student)", "นักศึกษาทุกคนในสาขาวิชา", "• เข้าสู่ระบบด้วยรหัสนักศึกษา\n• เลือกเทมเพลตเรซูเม่สวยงามในคลิกเดียว\n• กรอกประวัติ ทักษะ และผลงานโครงงาน\n• ปรับแต่งสี ขนาดการ์ด และรูปแบบฟอนต์\n• บันทึกแบบร่าง และกดเผยแพร่เพื่อรับลิงก์แชร์"),
-        ("🛡️ อาจารย์ / ผู้ดูแล (Admin)", "อาจารย์ที่ปรึกษา, ฝ่ายทะเบียน", "• ดูสถิติรวมของนักศึกษาทั้งรุ่น\n• เปิดตรวจผลงานของนักศึกษาเป็นรายคน\n• ฟังก์ชันพิเศษ: ตรวจงานแบบร่างที่ยังไม่เสร็จได้\n• เพิ่มรายชื่อนักศึกษาใหม่เข้าระบบ\n• กดรีเซ็ตรหัสผ่านให้นักศึกษาที่ลืมรหัส"),
-        ("🌐 ผู้เข้าชม / บริษัท (Visitor)", "บริษัทรับสมัครงาน, กรรมการ, เพื่อน", "• เปิดชมหน้าเว็บผลงานของนักศึกษาผ่านลิงก์\n• เปิดดูได้ทันทีโดยไม่ต้องลงทะเบียนหรือล็อกอิน\n• รองรับทั้งคอมพิวเตอร์ แท็บเล็ต และสมาร์ตโฟน")
+        ("🎓 นักศึกษา (Student)", "นักศึกษาทุกคนในสาขาวิชา", "• ล็อกอินด้วยรหัสนักศึกษา\n• เลือกเทมเพลตเรซูเม่ 6 สไตล์ในคลิกเดียว\n• ใส่บล็อกข้อมูล ทักษะ และผลงานโครงงาน\n• ปรับแต่งฟอนต์ สีสัน และขนาดการ์ด\n• บันทึกแบบร่าง และกดเผยแพร่เพื่อแชร์ลิงก์"),
+        ("🛡️ อาจารย์ / ผู้ดูแล (Admin)", "อาจารย์ที่ปรึกษา, ฝ่ายทะเบียน", "• ดูสถิติรวมของนักศึกษาทั้งรุ่น\n• เปิดตรวจผลงานของนักศึกษาเป็นรายคน\n• ฟังก์ชันพิเศษ: ตรวจงานแบบร่างที่ยังไม่เสร็จได้\n• เพิ่มรายชื่อนักศึกษาใหม่เข้าระบบ\n• รีเซ็ตรหัสผ่านให้นักศึกษาที่ลืมรหัส"),
+        ("🌐 ผู้เข้าชม / บริษัท (Visitor)", "บริษัทรับสมัครงาน, กรรมการ, เพื่อน", "• เปิดชมหน้าเว็บผลงานของนักศึกษาผ่านลิงก์\n• เปิดดูได้ทันทีโดยไม่ต้องลงทะเบียน\n• พิมพ์หรือบันทึกเป็น PDF มาตรฐาน A4")
     ]
     
     for i, row in enumerate(roles_data):
@@ -357,13 +351,13 @@ def build_docx():
     add_paragraph_styled(doc, "")
 
     # -------------------------------------------------------------
-    # SECTION 1: การเข้าสู่ระบบ (LOGIN)
+    # SECTION 1: เข้าสู่ระบบ
     # -------------------------------------------------------------
-    add_heading_styled(doc, "🚀 บทที่ 1: การเข้าสู่ระบบครั้งแรก (Login)", level=1)
+    add_heading_styled(doc, "🚀 บทที่ 1: การเข้าสู่ระบบและการระบุตัวตน (Authentication)", level=1)
     
     add_paragraph_styled(
         doc,
-        "ทุกครั้งที่ต้องการเริ่มใช้งานระบบ ให้เปิดโปรแกรมท่องเว็บ (Google Chrome, Microsoft Edge, หรือ Safari) แล้วเข้าไปที่หน้าเว็บของระบบ จากนั้นจะพบกับหน้าต่างเข้าสู่ระบบดังภาพด้านล่าง:"
+        "ทุกครั้งที่ต้องการเริ่มใช้งานระบบ ให้เปิดโปรแกรมท่องเว็บ (Google Chrome, Microsoft Edge, หรือ Safari) แล้วเข้าไปที่หน้าเว็บของระบบ /login จากนั้นจะพบกับหน้าต่างเข้าสู่ระบบดังภาพจริงด้านล่าง:"
     )
     
     add_screenshot_box(
@@ -372,27 +366,27 @@ def build_docx():
         "ภาพที่ 1: หน้าต่างเข้าสู่ระบบจริง (PFS Secure Login Screen)"
     )
     
-    add_heading_styled(doc, "📌 คำอธิบายจุดสำคัญในการเข้าสู่ระบบ:", level=2)
+    add_heading_styled(doc, "📌 ฟังก์ชัน 1.1: วิธีการเข้าสู่ระบบทีละขั้นตอน (Step-by-Step Login)", level=2)
+    add_bullet_styled(
+        doc,
+        "สำหรับ นักศึกษา ให้พิมพ์ รหัสนักศึกษา 8-13 หลัก (เช่น 65010001) หรืออีเมลที่ลงทะเบียนไว้ / สำหรับ อาจารย์และผู้ดูแล ให้พิมพ์อีเมลประจำตำแหน่ง เช่น admin@pfs.local",
+        bold_prefix="ขั้นตอนที่ 1 — ช่องระบุตัวตน (Identifier): "
+    )
+    add_bullet_styled(
+        doc,
+        "กรอกรหัสผ่านส่วนตัวของท่านในช่องนี้",
+        bold_prefix="ขั้นตอนที่ 2 — ช่องรหัสผ่าน (Password): "
+    )
+    add_bullet_styled(
+        doc,
+        "คลิกปุ่มสีน้ำเงินนี้เพื่อยืนยันตัวตน",
+        bold_prefix="ขั้นตอนที่ 3 — ปุ่มเข้าสู่ระบบ (Sign In): "
+    )
     
-    add_bullet_styled(
+    add_heading_styled(doc, "📌 ฟังก์ชัน 1.2: การนำทางและแยกสิทธิ์อัตโนมัติ (Role-based Routing)", level=2)
+    add_paragraph_styled(
         doc,
-        "สำหรับ นักศึกษา ให้พิมพ์ รหัสนักศึกษา 8 หลัก (เช่น 65010001) หรืออีเมลที่ลงทะเบียนไว้ / สำหรับ อาจารย์และผู้ดูแล ให้พิมพ์อีเมลประจำตำแหน่ง (เช่น admin@pfs.local)",
-        bold_prefix="[1] ช่องระบุตัวตน (Username / Email): "
-    )
-    add_bullet_styled(
-        doc,
-        "พิมพ์รหัสผ่านส่วนตัวของท่าน (สำหรับการเข้าใช้งานครั้งแรก ระบบอาจตั้งรหัสผ่านเริ่มต้นเป็นรหัสนักศึกษา)",
-        bold_prefix="[2] ช่องรหัสผ่าน (Password): "
-    )
-    add_bullet_styled(
-        doc,
-        "เมื่อกรอกข้อมูลครบถ้วนแล้ว ให้คลิกปุ่มสีน้ำเงินนี้เพื่อเข้าสู่ระบบ",
-        bold_prefix="[3] ปุ่มเข้าสู่ระบบ (Sign In): "
-    )
-    add_bullet_styled(
-        doc,
-        "ระบบได้รับการออกแบบให้แยกหน้าจอให้อัตโนมัติ หากล็อกอินด้วยบัญชีนักศึกษาจะพาไปหน้าแดชบอร์ดนักศึกษาทันที ส่วนอาจารย์จะพาไปที่ศูนย์ควบคุมผู้ดูแล",
-        bold_prefix="[4] การนำทางอัตโนมัติ (Role-based Redirection): "
+        "เมื่อเข้าสู่ระบบสำเร็จ ระบบจะแยกหน้าจอให้อัตโนมัติ โดยนักศึกษาจะถูกพาไปยังหน้าแดชบอร์ดนักศึกษา (/student) ส่วนอาจารย์จะถูกพาไปยังศูนย์ควบคุมผู้ดูแล (/admin) ทันทีโดยไม่ต้องเลือกเมนูเอง"
     )
     
     add_callout(
@@ -410,7 +404,6 @@ def build_docx():
     add_heading_styled(doc, "🎓 บทที่ 2: คู่มือสำหรับ \"นักศึกษา\" (Student Guide)", level=1)
     
     add_heading_styled(doc, "2.1 หน้าแดชบอร์ดของฉัน (Student Dashboard)", level=2)
-    
     add_paragraph_styled(
         doc,
         "เมื่อเข้าสู่ระบบด้วยบัญชีนักศึกษา จะพบกับหน้าศูนย์รวมข้อมูลส่วนตัว ซึ่งจะรายงานสถานะผลงาน ลิงก์สำหรับแชร์ และปุ่มคำสั่งสำคัญทั้งหมด:"
@@ -419,69 +412,78 @@ def build_docx():
     add_screenshot_box(
         doc,
         f"{REAL_IMG_DIR}/02-real-student-dashboard.png",
-        "ภาพที่ 2: หน้าแดชบอร์ดส่วนตัวของนักศึกษา (Student Dashboard)"
+        "ภาพที่ 2: หน้าแดชบอร์ดส่วนตัวของนักศึกษาจริง (Student Dashboard)"
     )
     
-    add_heading_styled(doc, "📌 4 จุดสำคัญบนหน้าแดชบอร์ดที่ต้องทราบ:", level=3)
+    add_heading_styled(doc, "📌 อธิบายการใช้งานฟังก์ชันบนหน้าแดชบอร์ด:", level=3)
     
     add_bullet_styled(
         doc,
-        "คลิกปุ่มสีน้ำเงินนี้เพื่อเปิดสตูดิโอสำหรับพิมพ์ข้อมูล ใส่รูปภาพ และจัดหน้าเรซูเม่",
-        bold_prefix="1. ปุ่ม \"เข้าสู่สตูดิโอออกแบบ (Edit Canvas)\": "
+        "การ์ดสรุปจะรายงานว่าเรซูโม่อยู่ในสถานะ 'เผยแพร่แล้ว (Published)' สีเขียว หรือ 'แบบร่าง (Draft)' สีส้ม พร้อมแถบเปอร์เซ็นต์ความสมบูรณ์เนื้อหา (% Completion) ที่ช่วยบอกว่าเราใส่ข้อมูลครบทุกหมวดหรือยัง",
+        bold_prefix="• ฟังก์ชัน 2.1.1 — ตรวจสอบสถานะและความสมบูรณ์: "
     )
     add_bullet_styled(
         doc,
-        "แสดงว่าผลงานของท่านอยู่ในสถานะ 'เผยแพร่แล้ว (Published)' หรือ 'แบบร่าง (Draft)' พร้อมแถบแสดงเปอร์เซ็นต์ความสมบูรณ์ของเนื้อหา ช่วยเตือนว่าใส่ข้อมูลครบทุกหมวดหรือยัง",
-        bold_prefix="2. การ์ดสรุปสถานะผลงาน: "
+        "กล่องสีน้ำเงินจะแสดง URL ผลงานของท่าน เพียงคลิกปุ่มสีเขียว 'คัดลอกลิงก์ (Copy)' ระบบจะก๊อบปี้ลิงก์ลงคลิปบอร์ดทันที สามารถนำไปวางส่งอาจารย์ทางแชต หรือแนบในอีเมลสมัครงานได้ทันที และกดปุ่ม 'เปิดดูหน้าจริง (View Live)' เพื่อตรวจสอบหน้าตาที่คนภายนอกเห็น",
+        bold_prefix="• ฟังก์ชัน 2.1.2 — การคัดลอกลิงก์ผลงานไปส่ง (Quick Copy Link): "
     )
     add_bullet_styled(
         doc,
-        "แสดง URL ประจำตัวของท่าน พร้อมปุ่ม 'คัดลอกลิงก์' สีเขียว เพียงคลิกเดียวก็สามารถนำลิงก์ไปส่งให้อาจารย์ทางแชต หรือแนบในอีเมลสมัครงานได้ทันที",
-        bold_prefix="3. กล่องลิงก์แชร์ผลงานสาธารณะ (Public URL): "
+        "คลิกปุ่ม 'แก้ไขโปรไฟล์' เพื่อแก้ไขชื่อภาษาไทย/อังกฤษ แผนกวิชา หรือระดับชั้นปี แล้วกดปุ่มบันทึก",
+        bold_prefix="• ฟังก์ชัน 2.1.3 — การแก้ไขข้อมูลส่วนตัว (Profile Management): "
     )
     add_bullet_styled(
         doc,
-        "มีเมนูสำหรับตรวจสอบและแก้ไขชื่อ-นามสกุล อีเมล และเมนูสำหรับเปลี่ยนรหัสผ่านใหม่",
-        bold_prefix="4. เมนูจัดการบัญชีผู้ใช้งาน: "
+        "คลิกปุ่ม 'เปลี่ยนรหัสผ่าน' กรอกรหัสเดิม และรหัสใหม่ที่ต้องการ 2 ครั้ง แล้วกดยืนยันเพื่อเปลี่ยนรหัสผ่านทันที",
+        bold_prefix="• ฟังก์ชัน 2.1.4 — การเปลี่ยนรหัสผ่าน (Change Password): "
     )
 
     add_paragraph_styled(doc, "")
 
     # 2.2 Studio Canvas Editor
-    add_heading_styled(doc, "2.2 สตูดิโอออกแบบผลงาน (Studio Grid Canvas Editor)", level=2)
-    
+    add_heading_styled(doc, "2.2 สตูดิโอออกแบบผลงานแบบกริด (Studio Grid Canvas Editor)", level=2)
     add_paragraph_styled(
         doc,
-        "เมื่อคลิกปุ่ม 'เข้าสู่สตูดิโอออกแบบ' ท่านจะพบกับหน้าจอออกแบบและจัดหน้าเรซูเม่ ซึ่งออกแบบมาให้ใช้งานง่ายเหมือนการจัดวางบล็อกเลโก้ โดยแบ่งพื้นที่ออกเป็น 3 โซนหลัก:"
+        "เมื่อคลิกปุ่ม 'เข้าสู่สตูดิโอออกแบบ (Edit Canvas)' จากหน้าแดชบอร์ด จะเข้าสู่หน้าจอออกแบบผลงาน ซึ่งออกแบบมาให้จัดวางบล็อกเนื้อหาได้อย่างอิสระ:"
     )
     
     add_screenshot_box(
         doc,
         f"{REAL_IMG_DIR}/03-real-studio-editor.png",
-        "ภาพที่ 3: สตูดิโอออกแบบ Portfolio แบบกริด (Studio Grid Canvas Editor)"
+        "ภาพที่ 3: สตูดิโอออกแบบ Portfolio แบบกริดจริง (Studio Grid Canvas Editor)"
     )
     
-    add_heading_styled(doc, "📌 โครงสร้าง 3 โซนทำงานในสตูดิโอ:", level=3)
+    add_heading_styled(doc, "📌 อธิบายการใช้งานแต่ละฟังก์ชันในสตูดิโอ:", level=3)
     
     add_bullet_styled(
         doc,
-        "รวบรวมหมวดหมู่ข้อมูลที่จำเป็นสำหรับเรซูเม่ไว้ครบครัน เช่น ข้อมูลส่วนตัว (Profile), แนะนำตัว (About Me), ทักษะคอมพิวเตอร์ (Skills), โครงงานเด่น (Projects), ประสบการณ์ (Experience), รางวัล (Certificates) เพียงคลิกที่บล็อกที่ต้องการ การ์ดนั้นจะถูกวางลงบนหน้าเว็บทันที",
-        bold_prefix="[1] คลังบล็อกเนื้อหา (Blocks Library - ฝั่งซ้าย): "
+        "คลิกปุ่ม 'เลือกเทมเพลต' บนแถบคำสั่งด้านบน สามารถเปลี่ยนดีไซน์ได้ 6 สไตล์ในคลิกเดียว เช่น Professional (เน้นทางการ น่าเชื่อถือ), Modern Minimal (เรียบหรู คมชัด), Creative (สีสันสดใส มีพลัง) หรือ Tech Engineer (ฟอนต์สไตล์นักพัฒนา)",
+        bold_prefix="• ฟังก์ชัน 2.2.1 — การเลือกเทมเพลตสำเร็จรูป (Template Gallery): "
     )
     add_bullet_styled(
         doc,
-        "แสดงผลงานจริงตามตำแหน่งที่จะแสดงให้คนภายนอกเห็น ท่านสามารถคลิกเลือกการ์ดใดการ์ดหนึ่งเพื่อแก้ไขเนื้อหาหรือจัดตำแหน่งได้อย่างอิสระ",
-        bold_prefix="[2] ผืนผ้าใบจัดวาง (Canvas - โซนตรงกลาง): "
+        "แผงด้านซ้ายรวบรวมบล็อกข้อมูลที่จำเป็นไว้ครบถ้วน เช่น Profile (ข้อมูลติดต่อ), About Me (แนะนำตัว), Education (การศึกษา), Skills (ทักษะโปรแกรม), Projects (โครงงานเด่น), Experience (ประสบการณ์ฝึกงาน), Certificates (เกียรติบัตร) เพียงคลิกที่บล็อกที่ต้องการ การ์ดนั้นจะเพิ่มลงบน Canvas ตรงกลางทันที",
+        bold_prefix="• ฟังก์ชัน 2.2.2 — การเพิ่มบล็อกหมวดหมู่เนื้อหา (Blocks Library): "
     )
     add_bullet_styled(
         doc,
-        "เมื่อคลิกที่การ์ดใดๆ หน้าต่างด้านขวาจะเปิดขึ้นมาเพื่อให้ท่าน: พิมพ์ข้อความ, เลือกเปลี่ยนฟอนต์ตัวอักษร, ปรับขนาดความกว้างของการ์ด (เต็มหน้าจอ หรือ ครึ่งหน้าจอวางคู่กัน), หรือกดปุ่มถังขยะสีแดงเพื่อลบการ์ดที่ไม่ต้องการออก",
-        bold_prefix="[3] แผงปรับแต่งรายละเอียด (Property Inspector - ฝั่งขวา): "
+        "คลิกที่การ์ดแล้วเลือกขนาดในแผงขวา: เลือก 'เต็มหน้าจอ (12 ช่อง)' สำหรับหัวข้อหลัก หรือ 'ครึ่งหน้าจอ (6 ช่อง)' เพื่อวางการ์ดประกบคู่กัน พร้อมปุ่มลูกศรขึ้น-ลงเพื่อสลับตำแหน่ง และปุ่มดวงตาเพื่อซ่อนหัวข้อชั่วคราว",
+        bold_prefix="• ฟังก์ชัน 2.2.3 — การจัดผังตารางและปรับขนาดการ์ด (Grid Layout & Sizing): "
     )
     add_bullet_styled(
         doc,
-        "ด้านบนสุดมีเมนู 'เลือกเทมเพลตสำเร็จรูป' ให้เปลี่ยนสไตล์เรซูเม่ได้ในคลิกเดียว พร้อมปุ่ม 'บันทึกฉบับร่าง' (สีส้ม) และปุ่ม 'เผยแพร่' (สีเขียว)",
-        bold_prefix="[4] แถบคำสั่งด้านบน (Command Bar): "
+        "เมื่อคลิกเลือกการ์ดใดๆ บนผืนผ้าใบ แผงด้านขวาในแท็บ 'เนื้อหา (Content)' จะเปิดขึ้นมาให้พิมพ์ชื่อหัวข้อ, บรรยายรายละเอียด, เพิ่มรายการทักษะ หรือลิสต์ผลงานโครงงานพร้อมแนบลิงก์ GitHub ได้ไม่จำกัด",
+        bold_prefix="• ฟังก์ชัน 2.2.4 — การพิมพ์และแก้ไขเนื้อหา (Content Inspector): "
+    )
+    add_bullet_styled(
+        doc,
+        "ในแท็บ 'ดีไซน์ (Design)' แผงขวามือ สามารถเลือกเปลี่ยนสีธีมการ์ดจากจานสี และเลือกลายตัวอักษรยอดนิยม เช่น Prompt, Kanit, Inter, Fira Code รวมถึงจัดตำแหน่งข้อความชิดซ้าย/กึ่งกลาง/ชิดขวา",
+        bold_prefix="• ฟังก์ชัน 2.2.5 — การปรับแต่งสีสันและฟอนต์ (Design & Styling): "
+    )
+    add_bullet_styled(
+        doc,
+        "หากไม่ต้องการแสดงหมวดหมู่นั้น ให้คลิกปุ่มถังขยะสีแดงที่แผงขวาเพื่อลบการ์ดออกจากหน้าเว็บ",
+        bold_prefix="• ฟังก์ชัน 2.2.6 — การลบบล็อกที่ไม่ต้องการ (Delete Block): "
     )
 
     add_paragraph_styled(doc, "")
@@ -539,7 +541,7 @@ def build_docx():
     add_callout(
         doc,
         title="จุดที่นักศึกษามักผิดพลาดบ่อยที่สุด",
-        text="หลังจากแต่งหน้าตาเรซูเม่เสร็จแล้ว หากนักศึกษาคลิกเฉพาะปุ่ม 'บันทึกฉบับร่าง' แต่ลืมคลิกปุ่ม 'เผยแพร่ (Publish)' สีเขียว อาจารย์หรือบริษัทที่ได้รับลิงก์จะไม่สามารถเปิดดูผลงานได้ ดังนั้นเมื่อทำงานเสร็จทุกครั้ง ต้องมั่นใจว่าได้กดปุ่มเผยแพร่แล้วนะครับ",
+        text="หลังจากแต่งหน้าตาเรซูเม่เสร็จแล้ว หากนักศึกษาคลิกเฉพาะปุ่ม 'บันทึกฉบับร่าง' แต่ลืมคลิกปุ่ม 'เผยแพร่ (Publish)' สีเขียว อาจารย์หรือบริษัทที่ได้รับลิงก์จะไม่สามารถเปิดดูผลงานได้ ดังนั้นเมื่อแต่งเสร็จทุกครั้ง ต้องมั่นใจว่าได้กดปุ่มเผยแพร่แล้วนะครับ",
         style="important"
     )
 
@@ -549,43 +551,53 @@ def build_docx():
     # SECTION 3: อาจารย์และผู้ดูแลระบบ (ADMIN GUIDE)
     # -------------------------------------------------------------
     add_heading_styled(doc, "🛡️ บทที่ 3: คู่มือสำหรับ \"อาจารย์และผู้ดูแลระบบ\" (Admin Guide)", level=1)
-    
     add_paragraph_styled(
         doc,
-        "สำหรับอาจารย์ที่ปรึกษา หัวหน้าสาขาวิชา หรือเจ้าหน้าที่ดูแลระบบ หน้าต่างศูนย์ควบคุมผู้ดูแลระบบ (Admin Dashboard) คือศูนย์กลางในการติดตามความคืบหน้า ตรวจผลงาน และบริหารจัดการผู้ใช้งานทั้งหลักสูตร:"
+        "สำหรับอาจารย์ที่ปรึกษา หัวหน้าสาขาวิชา หรือเจ้าหน้าที่ดูแลระบบ หน้าต่างศูนย์ควบคุมผู้ดูแลระบบ (/admin) คือศูนย์กลางในการติดตามความคืบหน้า ตรวจผลงาน และบริหารจัดการผู้ใช้งานทั้งหลักสูตร:"
     )
     
     add_screenshot_box(
         doc,
         f"{REAL_IMG_DIR}/04-real-admin-dashboard.png",
-        "ภาพที่ 4: หน้าศูนย์ควบคุมผู้ดูแลระบบและตรวจงาน (Admin Dashboard)"
+        "ภาพที่ 4: หน้าศูนย์ควบคุมผู้ดูแลระบบและตรวจงานจริง (Admin Dashboard)"
     )
     
-    add_heading_styled(doc, "📌 4 ฟังก์ชันหลักในการบริหารและตรวจงาน:", level=2)
+    add_heading_styled(doc, "📌 ฟังก์ชันการทำงานของผู้ดูแลระบบทีละขั้นตอน:", level=2)
     
     add_bullet_styled(
         doc,
-        "แสดงจำนวนนักศึกษาทั้งหมดในระบบ, จำนวนคนที่เผยแพร่ผลงานแล้ว (Published), จำนวนคนที่อยู่ระหว่างทำ (Draft), และคนที่ยังไม่เริ่มทำ ช่วยให้อาจารย์ทราบภาพรวมความคืบหน้าของรุ่นได้ในทันที",
-        bold_prefix="1. แถบสรุปสถิติภาพรวม (Overview Metrics): "
+        "ดูตัวเลขสรุปผลได้ทันที: มีนักศึกษาทั้งหมดกี่คน, ส่งงานแล้วกี่คน (Published), อยู่ระหว่างทำกี่คน (Draft), และยังไม่เริ่มทำกี่คน ช่วยให้อาจารย์วางแผนติดตามงานได้ทันท่วงที",
+        bold_prefix="• ฟังก์ชัน 3.1 — การตรวจดูสถิติภาพรวมทั้งรุ่น (Overview Metrics): "
     )
     add_bullet_styled(
         doc,
-        "อาจารย์สามารถพิมพ์รหัสนักศึกษา หรือชื่อ-นามสกุล เพื่อค้นหานักศึกษาที่ต้องการได้อย่างรวดเร็ว พร้อมตัวกรองเลือกดูเฉพาะคนที่ยังส่งงานไม่เรียบร้อย",
-        bold_prefix="2. ช่องค้นหาและตัวกรองสถานะ (Search & Filter): "
+        "พิมพ์ชื่อ, รหัสนักศึกษา หรืออีเมลในช่องค้นหา ตารางจะกรองรายชื่อให้ทันทีแบบเรียลไทม์ พร้อมแท็บคัดกรองเลือกดูเฉพาะคนที่ยังไม่ส่งงาน",
+        bold_prefix="• ฟังก์ชัน 3.2 — ระบบค้นหาและตัวกรอง (Search & Filter): "
     )
     add_bullet_styled(
         doc,
-        "ใช้เมื่อมีนักศึกษาลงทะเบียนเพิ่มในเทอม เพียงคลิกปุ่มสีม่วงนี้ แล้วกรอกรหัสนักศึกษา ชื่อ และอีเมล ระบบจะเปิดบัญชีเริ่มต้นให้ทันที",
-        bold_prefix="3. ปุ่มเพิ่มนักศึกษาใหม่ (+ Add Student): "
+        "คลิกปุ่ม 'เปิดดู >' (สีน้ำเงิน) ในแถวของนักศึกษาที่เผยแพร่ผลงานแล้ว เพื่อเปิดดูเรซูเม่หน้าจริงแบบที่คนภายนอกเห็นและประเมินให้คะแนน",
+        bold_prefix="• ฟังก์ชัน 3.3 — การเปิดตรวจผลงานที่เผยแพร่แล้ว (View Live Portfolio): "
     )
     add_bullet_styled(
         doc,
-        "ในแต่ละแถวของนักศึกษา จะมีปุ่มสั่งการ 4 รูปแบบ:\n"
-        "   • ปุ่ม 'เปิดดู >' (สีน้ำเงิน): คลิกเพื่อเปิดดูเรซูเม่หน้าจริงแบบที่คนภายนอกเห็น\n"
-        "   • ปุ่ม 'ตรวจแบบร่าง 🔍' (สีส้ม): ฟังก์ชันพิเศษสำหรับอาจารย์ สามารถคลิกเข้าไปตรวจดูความคืบหน้าของนักศึกษาที่ยังทำไม่เสร็จได้ แม้ว่านักศึกษาจะยังไม่ได้กดเผยแพร่ก็ตาม\n"
-        "   • ปุ่ม 'แก้ไข': ปรับปรุงข้อมูลส่วนตัว เช่น เปลี่ยนชื่อ หรือแก้ไขอีเมล\n"
-        "   • ปุ่ม 'รีเซ็ต': ใช้ตั้งรหัสผ่านใหม่ให้นักศึกษาในกรณีที่นักศึกษาลืมรหัสผ่าน",
-        bold_prefix="4. ปุ่มปฏิบัติการในตาราง (Action Buttons): "
+        "สำหรับนักศึกษาที่ยังทำไม่เสร็จ (สถานะขึ้นแบบร่าง) อาจารย์สามารถคลิกปุ่ม 'ตรวจแบบร่าง 🔍' (สีส้ม) เพื่อเข้าไปดูความคืบหน้าของงานได้ แม้ว่านักศึกษาจะยังไม่ได้กดเผยแพร่ก็ตาม ช่วยให้อาจารย์ให้คำแนะนำก่อนส่งจริงได้",
+        bold_prefix="• ฟังก์ชัน 3.4 — ฟังก์ชันพิเศษ: การเปิดตรวจแบบร่าง (Draft Review 🔍): "
+    )
+    add_bullet_styled(
+        doc,
+        "คลิกปุ่มสีม่วง '+ Add Student' แล้วกรอกรหัสนักศึกษา, ชื่อ-นามสกุล, อีเมล, รหัสผ่านเริ่มต้น, และชั้นปี ระบบจะเปิดบัญชีให้ทันที",
+        bold_prefix="• ฟังก์ชัน 3.5 — การเพิ่มบัญชีนักศึกษาใหม่ (+ Add Student): "
+    )
+    add_bullet_styled(
+        doc,
+        "กรณีนักศึกษาลืมรหัสผ่าน เพียงค้นหาชื่อนักศึกษาแล้วคลิกปุ่ม 'รีเซ็ต' (ไอคอนรูปกุญแจ 🔑) ระบบจะตั้งรหัสผ่านใหม่ให้นักศึกษาได้ทันทีในเวลาไม่เกิน 5 วินาที",
+        bold_prefix="• ฟังก์ชัน 3.6 — การรีเซ็ตรหัสผ่านให้นักศึกษา (Reset Password): "
+    )
+    add_bullet_styled(
+        doc,
+        "คลิกปุ่ม 'แก้ไข' เพื่อปรับปรุงข้อมูลส่วนตัว หรือคลิกปุ่ม 'เปิด/ปิดบัญชี' (ไอคอน Power) เพื่อเปลี่ยนสถานะเป็น Inactive (ระงับชั่วคราว) หรือ Active (เปิดใช้งาน)",
+        bold_prefix="• ฟังก์ชัน 3.7 — การแก้ไขข้อมูลและจัดการสถานะบัญชี (Edit & Status Toggle): "
     )
 
     add_paragraph_styled(doc, "")
@@ -594,32 +606,31 @@ def build_docx():
     # SECTION 4: ผู้เข้าชมภายนอกและนายจ้าง (VISITOR GUIDE)
     # -------------------------------------------------------------
     add_heading_styled(doc, "🌐 บทที่ 4: สำหรับ \"ผู้เข้าชมภายนอกและนายจ้าง\" (Visitor & Employer)", level=1)
-    
     add_paragraph_styled(
         doc,
-        "บุคคลภายนอก เช่น กรรมการประเมินหลักสูตร, ฝ่ายบุคคล (HR), หรือผู้บริหารบริษัทไอที สามารถเปิดรับชมผลงานของนักศึกษาได้ 2 รูปแบบ:"
+        "บุคคลภายนอก เช่น กรรมการประเมินหลักสูตร, ฝ่ายบุคคล (HR), หรือผู้บริหารบริษัทไอที สามารถเปิดรับชมผลงานของนักศึกษาได้ง่ายๆ ดังนี้:"
     )
     
     add_screenshot_box(
         doc,
         f"{REAL_IMG_DIR}/05-real-public-dashboard.png",
-        "ภาพที่ 5: หน้าทำเนียบผลงานนักศึกษาสาธารณะ (Public Portfolio Showcase)"
+        "ภาพที่ 5: หน้าแสดงเรซูเม่และแฟ้มผลงานสาธารณะจริง (Public Portfolio Showcase)"
     )
     
     add_bullet_styled(
         doc,
-        "เปิดชมจากลิงก์เฉพาะของนักศึกษาที่แนบมาในใบสมัครงาน (เช่น /r/somchai-portfolio) ซึ่งจะเปิดตรงเข้าสู่หน้าเรซูเม่ของนักศึกษาคนนั้นทันที",
-        bold_prefix="รูปแบบที่ 1: เข้าชมผ่านลิงก์ตรง (Direct Portfolio Link) — "
+        "คลิกเปิดจากลิงก์เฉพาะของนักศึกษาที่แนบมา (เช่น /r/65010001) ซึ่งจะเปิดตรงเข้าสู่หน้าเรซูเม่ของนักศึกษาคนนั้นทันทีโดยไม่ต้องเข้าสู่ระบบ",
+        bold_prefix="• ฟังก์ชัน 4.1 — เปิดชมผ่านลิงก์โดยตรง (Direct URL): "
     )
     add_bullet_styled(
         doc,
-        "เข้าชมที่หน้าทำเนียบรวม (/dashboard) เพื่อค้นหาและเลือกชมผลงานของนักศึกษาทุกคนในสาขาที่เปิดเผยแพร่สาธารณะ สามารถค้นหาตามชื่อ หรือทักษะที่สนใจได้",
-        bold_prefix="รูปแบบที่ 2: เข้าชมผ่านทำเนียบผลงานรวม (Public Showcase) — "
+        "เข้าหน้าเว็บ /dashboard เพื่อเลือกชมทำเนียบ Portfolio ของนักศึกษาทั้งหมดที่เปิดเผยแพร่สาธารณะ สามารถค้นหาตามชื่อ หรือทักษะที่สนใจได้",
+        bold_prefix="• ฟังก์ชัน 4.2 — เปิดชมทำเนียบผลงานรวม (Public Showcase): "
     )
     add_bullet_styled(
         doc,
-        "ระบบจัดหน้าตาแบบ Responsive Layout ทำให้อ่านง่าย ชัดเจน ทั้งบนคอมพิวเตอร์ แท็บเล็ต และสมาร์ตโฟน โดยไม่ต้องลงแอปพลิเคชันเพิ่มเติม",
-        bold_prefix="รูปแบบที่ 3: ความพร้อมในการเปิดบนทุกอุปกรณ์ — "
+        "เมื่อเปิดหน้าเรซูเม่ ให้กดปุ่ม Ctrl + P (Windows) หรือ Cmd + P (Mac) แล้วเลือกปลายทางเป็น 'Save as PDF' ระบบมี CSS Print Stylesheet ช่วยจัดขอบกระดาษ A4 ให้อัตโนมัติ สามารถเซฟเป็นไฟล์ PDF เก็บไว้นำเสนอกรรมการได้ทันที",
+        bold_prefix="• ฟังก์ชัน 4.3 — การพิมพ์หรือบันทึกเป็น PDF (Print to PDF): "
     )
 
     doc.add_page_break()
