@@ -165,6 +165,12 @@ export const templateDefinitions: TemplateDefinition[] = [
   }
 ];
 
+/**
+ * ฟังก์ชัน 3.1: ดึงนิยามและโครงสร้างเทมเพลต (Get Template Definition)
+ * หน้าที่: ดึงข้อมูลพิมพ์เขียวการจัดวางของการ์ดตามสไตล์ที่เลือก (Professional, Modern, Creative, Minimal, Academic, Compact)
+ * พารามิเตอร์: id - รหัสเทมเพลตที่เลือก
+ * คืนค่า: TemplateDefinition ออบเจกต์โครงสร้างเทมเพลต
+ */
 export function getTemplateDefinition(id: TemplateId): TemplateDefinition {
   return templateDefinitions.find((t) => t.id === id) || templateDefinitions[0];
 }
@@ -209,16 +215,34 @@ const settingOptions = {
   cardVariant: ["solid", "glass", "gradient", "outline"]
 } as const;
 
+/**
+ * ฟังก์ชัน 3.2: ตรวจสอบและคัดกรองค่าการตั้งค่า (Pick Setting - Whitelist Validator)
+ * หน้าที่: ตรวจสอบว่าค่าที่ส่งเข้ามาตรงกับรายการตัวเลือกที่อนุญาตหรือไม่ หากไม่ตรงให้คืนค่าเริ่มต้น (fallback) เพื่อป้องกันค่าแปลกปลอม
+ * พารามิเตอร์: value - ค่าที่ได้รับ, options - รายการตัวเลือกที่ถูกต้อง, fallback - ค่าเริ่มต้น
+ * คืนค่า: ค่าการตั้งค่าที่ปลอดภัย
+ */
 function pickSetting<T extends readonly string[]>(value: unknown, options: T, fallback: T[number]): T[number] {
   return typeof value === "string" && (options as readonly string[]).includes(value) ? (value as T[number]) : fallback;
 }
 
+/**
+ * ฟังก์ชัน 3.3: จำกัดขอบเขตตัวเลขให้อยู่ในช่วงที่ปลอดภัย (Clamp Number)
+ * หน้าที่: แปลงค่าเป็นตัวเลขและล็อกค่าไม่ให้ต่ำกว่า min หรือเกินกว่า max เพื่อป้องกันการกำหนดขนาดหรือพิกัดผิดพลาด
+ * พารามิเตอร์: value - ค่าที่ส่งมา, fallback - ค่าสำรอง, min - ค่าน้อยสุด, max - ค่ามากสุด
+ * คืนค่า: number ตัวเลขจำนวนเต็มที่ปลอดภัย
+ */
 function clampNumber(value: unknown, fallback: number, min: number, max: number) {
   const numberValue = Number(value);
   if (!Number.isFinite(numberValue)) return fallback;
   return Math.max(min, Math.min(max, Math.round(numberValue)));
 }
 
+/**
+ * ฟังก์ชัน 3.4: สร้างการตั้งค่าเริ่มต้นสำหรับแต่ละบล็อกเนื้อหา (Default Section Settings)
+ * หน้าที่: กำหนดค่ารูปแบบเริ่มต้น เช่น การแสดงหัวข้อ (showTitle), การจัดชิดซ้าย (alignment), ความโค้งมน (radius), และเงา (shadow)
+ * พารามิเตอร์: section - บล็อกเนื้อหา
+ * คืนค่า: Required<PortfolioSectionSettings> ออบเจกต์การตั้งค่าเริ่มต้นแบบครบถ้วน
+ */
 function defaultSectionSettings(section: PortfolioSection): Required<PortfolioSectionSettings> {
   return {
     showTitle: true,
@@ -235,6 +259,12 @@ function defaultSectionSettings(section: PortfolioSection): Required<PortfolioSe
   };
 }
 
+/**
+ * ฟังก์ชัน 3.5: กำหนดกรอบพิกัดและขนาดเริ่มต้นของการ์ด (Default Section Frame)
+ * หน้าที่: คำนวณพิกัด X, Y และความกว้าง-ความสูงเริ่มต้นสำหรับการจัดวางบน Canvas แบบ Freeform
+ * พารามิเตอร์: section - บล็อกเนื้อหา
+ * คืนค่า: Required<PortfolioSectionFrame> พิกัดและขนาดของการ์ด
+ */
 function defaultSectionFrame(section: PortfolioSection): Required<PortfolioSectionFrame> {
   const size = sectionFrameSizes[section.type] || sectionFrameSizes.custom;
   const orderIndex = Math.max(0, (section.order || 1) - 1);
@@ -253,6 +283,12 @@ function defaultSectionFrame(section: PortfolioSection): Required<PortfolioSecti
   };
 }
 
+/**
+ * ฟังก์ชัน 3.6: ทำความสะอาดและตรวจความปลอดภัยของการตั้งค่า (Sanitize Section Settings)
+ * หน้าที่: ตรวจสอบการตั้งค่าสไตล์การ์ดทั้งหมดผ่าน pickSetting เพื่อป้องกันการส่งค่าสไตล์ที่ไม่ถูกต้องหรือไม่ปลอดภัย
+ * พารามิเตอร์: section - บล็อกเนื้อหาที่ต้องการตรวจสอบ
+ * คืนค่า: PortfolioSectionSettings การตั้งค่าที่ผ่านการตรวจสอบแล้ว
+ */
 function sanitizeSectionSettings(section: PortfolioSection): PortfolioSectionSettings {
   const settings = section.settings || {};
   const defaults = defaultSectionSettings(section);
@@ -270,6 +306,12 @@ function sanitizeSectionSettings(section: PortfolioSection): PortfolioSectionSet
   };
 }
 
+/**
+ * ฟังก์ชัน 3.7: ตรวจสอบและจำกัดพิกัดกรอบการ์ด (Sanitize Section Frame)
+ * หน้าที่: ตรวจสอบพิกัด X, Y, Width, Height ให้อยู่ภายในขอบเขตกระดาษ/หน้าจอ ไม่ล้นออกนอกจอ
+ * พารามิเตอร์: section - บล็อกเนื้อหา
+ * คืนค่า: PortfolioSectionFrame พิกัดที่ปลอดภัย
+ */
 function sanitizeSectionFrame(section: PortfolioSection): PortfolioSectionFrame {
   const defaults = defaultSectionFrame(section);
   const frame = section.frame || {};
@@ -285,6 +327,12 @@ function sanitizeSectionFrame(section: PortfolioSection): PortfolioSectionFrame 
   };
 }
 
+/**
+ * ฟังก์ชัน 3.8: ตรวจสอบตำแหน่งคอลัมน์บนระบบกริด 12 ช่อง (Sanitize Grid Placement)
+ * หน้าที่: บังคับให้ Column Start/End อยู่ระหว่าง 1 ถึง 13 และ Row ไม่เกิน 20 เพื่อให้เรซูเม่เรียงตัวเป็นระเบียบ
+ * พารามิเตอร์: gp - พิกัดตาราง { colStart, colEnd, rowStart, rowEnd }
+ * คืนค่า: GridPlacement พิกัดตารางที่ถูกต้อง
+ */
 function sanitizeGridPlacement(gp: GridPlacement | undefined): GridPlacement | undefined {
   if (!gp) return undefined;
   return {
@@ -295,6 +343,12 @@ function sanitizeGridPlacement(gp: GridPlacement | undefined): GridPlacement | u
   };
 }
 
+/**
+ * ฟังก์ชัน 3.9: เสริมสไตล์มาตรฐานให้กับบล็อกเนื้อหา (With Section Style)
+ * หน้าที่: ผสานค่าสีประจำหมวดหมู่, การตั้งค่าความโค้งมน, และพิกัดกริด เพื่อให้บล็อกมีความสมบูรณ์พร้อมแสดงผล
+ * พารามิเตอร์: section - บล็อกเนื้อหา
+ * คืนค่า: PortfolioSection บล็อกเนื้อหาที่ผสานสไตล์ครบถ้วน
+ */
 function withSectionStyle(section: PortfolioSection): PortfolioSection {
   const style = sectionStyles[section.type] || sectionStyles.custom;
   return {
@@ -318,6 +372,12 @@ function withSectionStyle(section: PortfolioSection): PortfolioSection {
 /*  Apply template to sections                                         */
 /* ------------------------------------------------------------------ */
 
+/**
+ * ฟังก์ชัน 3.10: สลับโครงสร้างเทมเพลตเรซูเม่ (Apply Template Layout)
+ * หน้าที่: ปรับเปลี่ยนโครงสร้างการจัดวางหน้าตาตามเทมเพลตที่เลือก โดยรักษาข้อมูลเนื้อหาเดิมที่นักศึกษาเคยกรอกไว้ ไม่ให้สูญหาย
+ * พารามิเตอร์: templateId - รหัสเทมเพลตใหม่, existingSections - บล็อกเดิมที่มีอยู่, user - ข้อมูลนักศึกษา
+ * คืนค่า: PortfolioSection[] อาเรย์ของบล็อกเนื้อหาที่จัดวางตามเทมเพลตใหม่เรียบร้อยแล้ว
+ */
 export function applyTemplate(templateId: TemplateId, existingSections: PortfolioSection[], user?: UserDoc): PortfolioSection[] {
   const template = getTemplateDefinition(templateId);
   const result: PortfolioSection[] = [];
@@ -378,6 +438,12 @@ export function applyTemplate(templateId: TemplateId, existingSections: Portfoli
   return result;
 }
 
+/**
+ * ฟังก์ชัน 3.11: สร้างเนื้อหาเริ่มต้นตามประเภทหมวดหมู่ (Get Default Section Content)
+ * หน้าที่: เติมข้อมูลตั้งต้น เช่น ชื่อ-สกุล อีเมล ในบล็อก Profile หรือตัวอย่างทักษะและโปรเจกต์เมื่อผู้ใช้กดเพิ่มบล็อกใหม่
+ * พารามิเตอร์: type - ชนิดของหมวดหมู่ เช่น profile, skills, projects, user - ข้อมูลนักศึกษา
+ * คืนค่า: ออบเจกต์เนื้อหา { body, items }
+ */
 function getDefaultContent(type: PortfolioSection["type"], user?: UserDoc) {
   const fullName = user ? `${user.firstName} ${user.lastName}`.trim() : "ชื่อ-นามสกุล";
   const email = user?.email || "email@example.com";
@@ -412,6 +478,12 @@ function getDefaultContent(type: PortfolioSection["type"], user?: UserDoc) {
 /*  Default sections                                                   */
 /* ------------------------------------------------------------------ */
 
+/**
+ * ฟังก์ชัน 3.12: สร้างชุดบล็อกเริ่มต้นสำหรับนักศึกษาใหม่ (Default Sections Generator)
+ * หน้าที่: เรียกใช้ applyTemplate ร่วมกับเทมเพลตเริ่มต้น เพื่อสร้างหมวดหมู่พื้นฐานให้นักศึกษาเมื่อเริ่มสร้างเรซูเม่ครั้งแรก
+ * พารามิเตอร์: user - ข้อมูลนักศึกษา, templateId - รหัสเทมเพลตเริ่มต้น
+ * คืนค่า: PortfolioSection[] ชุดบล็อกเนื้อหาเริ่มต้น
+ */
 export function defaultSections(user: UserDoc, templateId: TemplateId = "professional"): PortfolioSection[] {
   return applyTemplate(templateId, [], user);
 }
@@ -420,6 +492,12 @@ export function defaultSections(user: UserDoc, templateId: TemplateId = "profess
 /*  Slug generation                                                    */
 /* ------------------------------------------------------------------ */
 
+/**
+ * ฟังก์ชัน 3.13: แปลงข้อความเป็นชื่อลิงก์ URL สากล (Slugify)
+ * หน้าที่: แปลงตัวอักษรเป็นพิมพ์เล็ก ตัดอักขระพิเศษออก แล้วแทนที่ช่องว่างด้วยเครื่องหมายขีดกลาง (-) เช่น "somchai-portfolio"
+ * พารามิเตอร์: input - ข้อความต้นฉบับ
+ * คืนค่า: string ข้อความ slug ที่ใช้กับเว็บได้ปลอดภัย
+ */
 function slugify(input: string) {
   const normalized = input
     .toLowerCase()
@@ -429,6 +507,12 @@ function slugify(input: string) {
   return normalized || `resume-${Date.now()}`;
 }
 
+/**
+ * ฟังก์ชัน 3.14: การันตีชื่อลิงก์ไม่ซ้ำกันในระบบ (Generate Unique Slug)
+ * หน้าที่: ตรวจสอบในฐานข้อมูลว่าชื่อ slug นี้มีคนใช้หรือยัง หากมีแล้วจะเติมเลขต่อท้าย เช่น -2, -3 ไปเรื่อยๆ จนกว่าจะไม่ซ้ำ
+ * พารามิเตอร์: seed - ข้อความตั้งต้น (เช่น รหัสนักศึกษา), ignorePortfolioId - ID ผลงานเดิม (กรณีแก้ไขงานเดิม)
+ * คืนค่า: Promise<string> ชื่อ slug ที่รับประกันว่าไม่ซ้ำใครแน่นอน
+ */
 export async function uniqueSlug(seed: string, ignorePortfolioId?: ObjectId) {
   const db = await getDb();
   const base = slugify(seed);
@@ -452,6 +536,12 @@ export async function uniqueSlug(seed: string, ignorePortfolioId?: ObjectId) {
 /*  Portfolio CRUD                                                     */
 /* ------------------------------------------------------------------ */
 
+/**
+ * ฟังก์ชัน 3.15: เปิดแฟ้มผลงาน หรือสร้างแฟ้มใหม่หากยังไม่มี (Get or Create Portfolio)
+ * หน้าที่: ค้นหาแฟ้มผลงานของนักศึกษาจาก userId หากพบจะส่งคืนทันที หากเป็นผู้ใช้ใหม่จะสร้างแฟ้มผลงานเริ่มต้นให้แบบอัตโนมัติ
+ * พารามิเตอร์: userId - ID ของนักศึกษา
+ * คืนค่า: Promise<PortfolioDoc> เอกสารแฟ้มผลงานจากฐานข้อมูล
+ */
 export async function getOrCreatePortfolio(userId: string) {
   const db = await getDb();
   const objectUserId = new ObjectId(userId);
@@ -483,6 +573,12 @@ export async function getOrCreatePortfolio(userId: string) {
   return { _id: result.insertedId, ...portfolio };
 }
 
+/**
+ * ฟังก์ชัน 3.16: แปลงเอกสารจากฐานข้อมูลเป็น JSON สำหรับส่งให้หน้าเว็บ (Serialize Portfolio)
+ * หน้าที่: แปลง ObjectId เป็นสตริง, แปลงวันที่ Date เป็น ISO String, และจัดเรียงบล็อกตามลำดับ order เพื่อให้เบราว์เซอร์นำไปแสดงผลได้ทันที
+ * พารามิเตอร์: portfolio - เอกสารเรซูเม่จาก MongoDB
+ * คืนค่า: SerializedPortfolio ออบเจกต์เรซูเม่รูปแบบ JSON ที่ปลอดภัย
+ */
 export function serializePortfolio(portfolio: PortfolioDoc): SerializedPortfolio {
   return {
     id: portfolio._id.toString(),
@@ -500,6 +596,12 @@ export function serializePortfolio(portfolio: PortfolioDoc): SerializedPortfolio
   };
 }
 
+/**
+ * ฟังก์ชัน 3.17: ตรวจสอบและคลีนข้อมูลบล็อกทั้งหมดก่อนบันทึกลงฐานข้อมูล (Sanitize Sections)
+ * หน้าที่: ควบคุมความยาวหัวข้อไม่เกิน 80 ตัวอักษร, ข้อความบรรยายไม่เกิน 4,000 ตัวอักษร และจำกัดจำนวนรายการ เพื่อความปลอดภัยของระบบ
+ * พารามิเตอร์: sections - รายการบล็อกเนื้อหาทั้งหมดที่ผู้ใช้ส่งมา
+ * คืนค่า: PortfolioSection[] ข้อมูลบล็อกที่ผ่านการทำความสะอาดเรียบร้อยแล้ว
+ */
 export function sanitizeSections(sections: PortfolioSection[]): PortfolioSection[] {
   return sections.map((section, index) => ({
     id: section.id || crypto.randomUUID(),

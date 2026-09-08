@@ -5,6 +5,12 @@ import { getCurrentUser, toSafeUser } from "@/lib/auth";
 import { getDb } from "@/lib/mongodb";
 import type { UserDoc } from "@/lib/types";
 
+/**
+ * ฟังก์ชัน 4.13: ดึงข้อมูลโปรไฟล์ของผู้ใช้ปัจจุบัน (Get My Profile API)
+ * หน้าที่: ดึงข้อมูลส่วนตัว (ชื่อ-สกุล แผนกวิชา ชั้นปี) ของผู้ใช้ที่กำลังล็อกอินอยู่
+ * เมธอด: GET /api/user/profile
+ * คืนค่า: NextResponse JSON { profile: SafeUser }
+ */
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) {
@@ -20,6 +26,13 @@ export async function GET() {
   return NextResponse.json({ profile: toSafeUser(dbUser) });
 }
 
+/**
+ * ฟังก์ชัน 4.14: นักศึกษาแก้ไขข้อมูลส่วนตัวของตนเอง (Update My Profile API)
+ * หน้าที่: ตรวจสอบความถูกต้องของชื่อ-นามสกุล และอัปเดตข้อมูลส่วนตัวลงฐานข้อมูล
+ * เมธอด: PUT /api/user/profile
+ * พารามิเตอร์: request (NextRequest) บรรจุ JSON { firstName, lastName, department, year }
+ * คืนค่า: NextResponse JSON { ok: true, message, profile }
+ */
 export async function PUT(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {

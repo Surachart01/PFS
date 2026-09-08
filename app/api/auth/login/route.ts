@@ -4,6 +4,14 @@ import { createSessionToken, hashPassword, setSessionCookie, verifyPassword } fr
 import { ensureIndexes, getDb } from "@/lib/mongodb";
 import type { UserDoc } from "@/lib/types";
 
+/**
+ * ฟังก์ชัน 4.1: ตรวจสอบการเข้าสู่ระบบและออกเซสชันคุกกี้ (User Login API)
+ * หน้าที่: รับ identifier (รหัสนักศึกษา/อีเมล) และ password มาตรวจสอบกับฐานข้อมูล MongoDB
+ *         หากถูกต้องจะสร้าง Token และแนบ Cookie ชื่อ portfolio_session ส่งกลับไปยังเบราว์เซอร์
+ * เมธอด: POST /api/auth/login
+ * พารามิเตอร์: request (NextRequest) บรรจุ JSON { identifier, password }
+ * คืนค่า: NextResponse JSON { ok: true, role } พร้อม Set-Cookie header
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null);

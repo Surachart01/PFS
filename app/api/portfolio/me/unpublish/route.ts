@@ -6,6 +6,12 @@ import { getDb } from "@/lib/mongodb";
 import { getOrCreatePortfolio, serializePortfolio } from "@/lib/portfolio";
 import type { PortfolioDoc } from "@/lib/types";
 
+/**
+ * ฟังก์ชัน 4.7: ปิดการแสดงผลงานสาธารณะชั่วคราว (Unpublish Portfolio API)
+ * หน้าที่: ปรับสถานะของแฟ้มผลงานกลับเป็น unpublished เพื่อปิดไม่ให้คนภายนอกเปิดดูผ่านลิงก์ได้
+ * เมธอด: POST /api/portfolio/me/unpublish
+ * คืนค่า: NextResponse JSON { portfolio: SerializedPortfolio }
+ */
 export async function POST() {
   const { user, response } = await requireApiUser(["student"]);
   if (response) return response;

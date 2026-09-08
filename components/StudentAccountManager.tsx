@@ -28,6 +28,10 @@ export function StudentAccountManager({ user }: { user: SafeUser }) {
     confirmPassword: ""
   });
 
+  /**
+   * ฟังก์ชัน 5.3.1: นักศึกษาบันทึกแก้ไขข้อมูลส่วนตัว (Save Profile Client)
+   * หน้าที่: ส่งข้อมูลชื่อ นามสกุล แผนกวิชา และชั้นปีไปยัง API PUT /api/user/profile
+   */
   async function handleSaveProfile(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
@@ -58,6 +62,10 @@ export function StudentAccountManager({ user }: { user: SafeUser }) {
     }, 1200);
   }
 
+  /**
+   * ฟังก์ชัน 5.3.2: นักศึกษาเปลี่ยนรหัสผ่านของตนเอง (Change Password Client)
+   * หน้าที่: ตรวจสอบความตรงกันของรหัสผ่านใหม่ แล้วส่งไปยัง API POST /api/auth/change-password
+   */
   async function handleChangePassword(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (passForm.newPassword !== passForm.confirmPassword) {

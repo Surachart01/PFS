@@ -7,7 +7,13 @@ import type { PortfolioDoc, UserDoc } from "@/lib/types";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
-// PUT: แก้ไขข้อมูลนักศึกษา
+/**
+ * ฟังก์ชัน 4.10: อาจารย์แก้ไขข้อมูลส่วนตัวของนักศึกษา (Admin Edit Student Info API)
+ * หน้าที่: ตรวจสอบความซ้ำซ้อนของรหัสนักศึกษาและอีเมล แล้วอัปเดตชื่อ-สกุล แผนกวิชา หรือชั้นปีลงฐานข้อมูล
+ * เมธอด: PUT /api/students/[id]
+ * พารามิเตอร์: request (NextRequest) บรรจุ JSON { studentId, firstName, lastName, email, department, year }
+ * คืนค่า: NextResponse JSON { ok: true, message }
+ */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   const { response } = await requireApiUser(["admin"]);
   if (response) return response;
@@ -61,7 +67,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   return NextResponse.json({ ok: true, message: "แก้ไขข้อมูลนักศึกษาสำเร็จ" });
 }
 
-// PATCH: สลับสถานะ active/inactive หรือ รีเซ็ตรหัสผ่าน
+/**
+ * ฟังก์ชัน 4.11: อาจารย์รีเซ็ตรหัสผ่านหรือสลับสถานะบัญชี (Admin Reset Password / Toggle Status API)
+ * หน้าที่: ดำเนินการ 2 คำสั่งตามที่ส่งมาใน action:
+ *         1. 'toggle-status': สลับสถานะระหว่าง active <-> inactive
+ *         2. 'reset-password': ตั้งรหัสผ่านใหม่ให้นักศึกษาเป็นรหัสนักศึกษาหรือรหัสที่กำหนด
+ * เมธอด: PATCH /api/students/[id]
+ * พารามิเตอร์: request (NextRequest) บรรจุ JSON { action, password?, status? }
+ * คืนค่า: NextResponse JSON { ok: true, message, status }
+ */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const { response } = await requireApiUser(["admin"]);
   if (response) return response;
@@ -103,7 +117,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   });
 }
 
-// DELETE: ลบบัญชีนักศึกษาและ Portfolio ที่เกี่ยวข้อง
+/**
+ * ฟังก์ชัน 4.12: อาจารย์ลบบัญชีนักศึกษาและผลงาน (Admin Delete Student API)
+ * หน้าที่: ลบบัญชีผู้ใช้จากคอลเลกชัน users และลบเอกสารเรซูเม่จากคอลเลกชัน portfolios พร้อมกัน ป้องกันข้อมูลตกค้าง
+ * เมธอด: DELETE /api/students/[id]
+ * คืนค่า: NextResponse JSON { ok: true, message }
+ */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const { response } = await requireApiUser(["admin"]);
   if (response) return response;

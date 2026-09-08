@@ -9,6 +9,12 @@ import type { PortfolioDoc, PortfolioStatus, TemplateId } from "@/lib/types";
 const allowedThemes = ["modern", "classic", "minimal"] as const;
 const allowedTemplates: TemplateId[] = ["professional", "modern", "creative", "minimal", "academic", "compact"];
 
+/**
+ * ฟังก์ชัน 4.4: ดึงข้อมูล Portfolio ของนักศึกษาปัจจุบัน (Get My Portfolio API)
+ * หน้าที่: ดึงข้อมูลแฟ้มสะสมผลงานของนักศึกษาที่กำลังล็อกอินอยู่ เพื่อนำไปแสดงผลบนหน้าสตูดิโอออกแบบ
+ * เมธอด: GET /api/portfolio/me
+ * คืนค่า: NextResponse JSON { portfolio: SerializedPortfolio }
+ */
 export async function GET() {
   const { user, response } = await requireApiUser(["student"]);
   if (response) return response;
@@ -17,6 +23,13 @@ export async function GET() {
   return NextResponse.json({ portfolio: serializePortfolio(portfolio) });
 }
 
+/**
+ * ฟังก์ชัน 4.5: บันทึกข้อมูลและสไตล์เรซูเม่ (Save / Update Portfolio API)
+ * หน้าที่: บันทึกการแก้ไขบล็อกเนื้อหา, เทมเพลต, และการจัดวางลงฐานข้อมูล พร้อมคลีนข้อมูลผ่าน sanitizeSections
+ * เมธอด: PUT /api/portfolio/me
+ * พารามิเตอร์: request (NextRequest) บรรจุ JSON { title, slug, templateId, styleSettings, sections }
+ * คืนค่า: NextResponse JSON { portfolio: SerializedPortfolio }
+ */
 export async function PUT(request: NextRequest) {
   const { user, response } = await requireApiUser(["student"]);
   if (response) return response;

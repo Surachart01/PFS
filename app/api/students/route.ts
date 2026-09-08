@@ -5,6 +5,12 @@ import { hashPassword, requireApiUser } from "@/lib/auth";
 import { getDb } from "@/lib/mongodb";
 import type { PortfolioDoc, UserDoc } from "@/lib/types";
 
+/**
+ * ฟังก์ชัน 4.8: ดึงรายชื่อนักศึกษาทั้งหมดพร้อมสถานะ Portfolio (Admin Get Students API)
+ * หน้าที่: ตรวจสอบสิทธิ์ผู้ดูแล ดึงข้อมูลนักศึกษาทุกคนจาก MongoDB พร้อมสถานะผลงาน (Published/Draft/No Portfolio)
+ * เมธอด: GET /api/students
+ * คืนค่า: NextResponse JSON { students: [...] }
+ */
 export async function GET() {
   const { response } = await requireApiUser(["admin"]);
   if (response) return response;
@@ -34,6 +40,13 @@ export async function GET() {
   });
 }
 
+/**
+ * ฟังก์ชัน 4.9: อาจารย์เพิ่มบัญชีนักศึกษาใหม่เข้าระบบ (Admin Create Student API)
+ * หน้าที่: ตรวจสอบความซ้ำซ้อนของรหัสนักศึกษาและอีเมล แฮชรหัสผ่าน และสร้างบัญชีนักศึกษาใหม่ในสถานะ active
+ * เมธอด: POST /api/students
+ * พารามิเตอร์: request (NextRequest) บรรจุ JSON { studentId, firstName, lastName, email, password, department, year }
+ * คืนค่า: NextResponse JSON { ok: true, student }
+ */
 export async function POST(request: NextRequest) {
   const { response } = await requireApiUser(["admin"]);
   if (response) return response;

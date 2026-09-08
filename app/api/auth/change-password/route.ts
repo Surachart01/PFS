@@ -5,6 +5,13 @@ import { getCurrentUser, hashPassword, verifyPassword } from "@/lib/auth";
 import { getDb } from "@/lib/mongodb";
 import type { UserDoc } from "@/lib/types";
 
+/**
+ * ฟังก์ชัน 4.3: เปลี่ยนรหัสผ่านส่วนตัวของผู้ใช้ (Change Password API)
+ * หน้าที่: ตรวจสอบความถูกต้องของรหัสผ่านเดิม ตรวจสอบความยาวรหัสผ่านใหม่ (>= 6 ตัวอักษร) แล้วเข้ารหัส Scrypt บันทึกลง MongoDB
+ * เมธอด: POST /api/auth/change-password
+ * พารามิเตอร์: request (NextRequest) บรรจุ JSON { currentPassword, newPassword }
+ * คืนค่า: NextResponse JSON { ok: true, message }
+ */
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {

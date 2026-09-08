@@ -124,6 +124,10 @@ export function AdminPanel({
     setStudents(data.students || []);
   }
 
+  /**
+   * ฟังก์ชัน 5.2.1: อาจารย์เพิ่มบัญชีนักศึกษาใหม่ (Add Student Client)
+   * หน้าที่: ส่งข้อมูลฟอร์มไปยัง API POST /api/students และรีโหลดรายชื่อใหม่อัตโนมัติ
+   */
   async function addStudent(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
@@ -161,6 +165,10 @@ export function AdminPanel({
     });
   }
 
+  /**
+   * ฟังก์ชัน 5.2.2: บันทึกการแก้ไขข้อมูลนักศึกษา (Update Student Client)
+   * หน้าที่: ส่งข้อมูลที่แก้ไขไปยัง API PUT /api/students/[id]
+   */
   async function handleUpdateStudent(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!editingStudent) return;
@@ -184,6 +192,10 @@ export function AdminPanel({
     await reload();
   }
 
+  /**
+   * ฟังก์ชัน 5.2.3: สลับสถานะเปิด/ปิดการใช้งานบัญชี (Toggle Account Status Client)
+   * หน้าที่: แสดงกล่องยืนยัน แล้วส่งคำสั่ง PATCH /api/students/[id] สลับระหว่าง active <-> inactive
+   */
   async function handleToggleStatus(student: AdminStudent) {
     const next = student.status === "active" ? "ปิดใช้งาน" : "เปิดใช้งาน";
     if (!confirm(`ต้องการ ${next} บัญชีของ "${student.firstName} ${student.lastName}" หรือไม่?`)) return;
@@ -202,6 +214,10 @@ export function AdminPanel({
     }
   }
 
+  /**
+   * ฟังก์ชัน 5.2.4: รีเซ็ตรหัสผ่านให้นักศึกษา (Reset Password Client)
+   * หน้าที่: เปิดกล่องรับรหัสผ่านใหม่ แล้วส่งคำสั่ง PATCH /api/students/[id] รีเซ็ตรหัสผ่านให้นักศึกษาทันที
+   */
   async function handleResetPassword(student: AdminStudent) {
     const newPass = prompt(`กรุณากรอกรหัสผ่านใหม่สำหรับ ${student.firstName} ${student.lastName} (เว้นว่าง = ใช้รหัสนักศึกษา):`, student.studentId || "Student@1234");
     if (newPass === null) return;
@@ -220,6 +236,10 @@ export function AdminPanel({
     }
   }
 
+  /**
+   * ฟังก์ชัน 5.2.5: ลบบัญชีนักศึกษาและแฟ้มผลงาน (Delete Student Client)
+   * หน้าที่: แสดงกล่องเตือนยืนยัน แล้วส่งคำขอ DELETE /api/students/[id] ลบข้อมูลออกจากฐานข้อมูลอย่างถาวร
+   */
   async function handleDeleteStudent(student: AdminStudent) {
     if (!confirm(`⚠️ ยืนยันการลบบัญชีนักศึกษา "${student.firstName} ${student.lastName}" (${student.studentId})?\nการกระทำนี้จะลบทั้งบัญชีและผลงาน Portfolio ทั้งหมดออกจากระบบอย่างถาวร!`)) {
       return;

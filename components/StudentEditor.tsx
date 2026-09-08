@@ -325,6 +325,10 @@ export function StudentEditor({ initialPortfolio }: { initialPortfolio: Serializ
     return list;
   }, [portfolio.sections]);
 
+  /**
+   * ฟังก์ชัน 5.1.1: เลื่อนตำแหน่งการ์ดขึ้นหรือลง (Move Section Up/Down)
+   * หน้าที่: สลับลำดับการแสดงผลของการ์ดในคอลัมน์ โดย Profile จะถูกล็อกไว้ด้านบนเสมอ
+   */
   function moveSection(index: number, direction: "up" | "down") {
     if (index === 0 || sortedSections[index]?.type === "profile") return;
     const targetIndex = direction === "up" ? index - 1 : index + 1;
@@ -534,6 +538,10 @@ export function StudentEditor({ initialPortfolio }: { initialPortfolio: Serializ
     setMessage(`เพิ่ม ${template.title} ลงบน document แล้ว`);
   }
 
+  /**
+   * ฟังก์ชัน 5.1.2: เพิ่มบล็อกหมวดหมู่ใหม่ลงบนหน้าจอ (Add Block to Canvas)
+   * หน้าที่: สร้างการ์ดใหม่ตามประเภทที่เลือก (เช่น ทักษะ, โปรเจกต์) แล้ววางต่อท้ายตารางบน Canvas
+   */
   function addBlock(type: PortfolioSection["type"]) {
     const template = templateByType(type);
     const section = templateToSection(template, sortedSections.length + 1, {
@@ -546,6 +554,10 @@ export function StudentEditor({ initialPortfolio }: { initialPortfolio: Serializ
     setMessage(`เพิ่ม ${template.title} ลงบน document แล้ว`);
   }
 
+  /**
+   * ฟังก์ชัน 5.1.3: ลบการ์ดที่ไม่ต้องการออกจากเรซูเม่ (Remove Section)
+   * หน้าที่: นำการ์ดออกจากรายการและปรับการเลือกการ์ดถัดไปอัตโนมัติ
+   */
   function removeSection(id: string, title?: string) {
     const nextSections = sortedSections.filter((section) => section.id !== id);
     const currentIndex = sortedSections.findIndex((section) => section.id === id);
@@ -581,6 +593,10 @@ export function StudentEditor({ initialPortfolio }: { initialPortfolio: Serializ
     setShowTemplateGallery(false);
   }
 
+  /**
+   * ฟังก์ชัน 5.1.4: สลับเทมเพลตเรซูเม่ในคลิกเดียว (Apply Template Client)
+   * หน้าที่: ส่งรหัสเทมเพลตไปยังเซิร์ฟเวอร์เพื่อคำนวณตำแหน่งกริดใหม่โดยรักษาเนื้อหาเดิมของนักศึกษาไว้
+   */
   async function applyTemplateClient(templateId: TemplateId) {
     setSaving(true);
     setMessage("");
@@ -610,6 +626,10 @@ export function StudentEditor({ initialPortfolio }: { initialPortfolio: Serializ
     }
   }
 
+  /**
+   * ฟังก์ชัน 5.1.5: บันทึกข้อมูลแบบร่าง (Save Draft Client)
+   * หน้าที่: ส่งข้อมูลการแก้ไขและสไตล์ทั้งหมดไปบันทึกลงฐานข้อมูล MongoDB ผ่าน API PUT /api/portfolio/me
+   */
   async function save(): Promise<boolean> {
     setSaving(true);
     setMessage("");
@@ -636,6 +656,10 @@ export function StudentEditor({ initialPortfolio }: { initialPortfolio: Serializ
     }
   }
 
+  /**
+   * ฟังก์ชัน 5.1.6: เผยแพร่ผลงานสู่สาธารณะ (Publish Portfolio Client)
+   * หน้าที่: บันทึกข้อมูลล่าสุด แล้วส่งคำสั่งเปิดสถานะเป็น published ให้คนภายนอกเปิดดูผ่านลิงก์ได้ทันที
+   */
   async function publish() {
     const saved = await save();
     if (!saved) return;
@@ -650,6 +674,10 @@ export function StudentEditor({ initialPortfolio }: { initialPortfolio: Serializ
     router.refresh();
   }
 
+  /**
+   * ฟังก์ชัน 5.1.7: ปิดการแสดงผลงานสาธารณะชั่วคราว (Unpublish Portfolio Client)
+   * หน้าที่: ปรับสถานะกลับเป็น draft เพื่อซ่อนผลงานไม่ให้คนภายนอกเข้าดู
+   */
   async function unpublish() {
     const response = await fetch("/api/portfolio/me/unpublish", { method: "POST" });
     const data = await response.json().catch(() => ({}));
