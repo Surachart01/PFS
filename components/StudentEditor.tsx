@@ -994,7 +994,15 @@ export function StudentEditor({ initialPortfolio }: { initialPortfolio: Serializ
               </div>
             </div>
 
-            <div className="document-stage">
+            <div
+              className={`document-stage ${documentDropActive ? "drop-active" : ""}`}
+              onDragLeave={() => setDocumentDropActive(false)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDocumentDropActive(true);
+              }}
+              onDrop={dropOnDocument}
+            >
               <div className="live-resume-editor-wrap">
                 <ResumeRenderer
                   onSelectSection={(id) => setSelectedId(id)}
@@ -1102,6 +1110,26 @@ export function StudentEditor({ initialPortfolio }: { initialPortfolio: Serializ
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="field" style={{ marginTop: "10px" }}>
+                <label>ธีมพื้นหลัง (Background Theme)</label>
+                <select
+                  className="select"
+                  onChange={(event) =>
+                    setPortfolio({
+                      ...portfolio,
+                      styleSettings: { ...portfolio.styleSettings, backgroundTheme: event.target.value as any }
+                    })
+                  }
+                  value={portfolio.styleSettings.backgroundTheme || "default"}
+                >
+                  {bgThemes.map((theme) => (
+                    <option key={theme.value} value={theme.value}>
+                      {theme.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

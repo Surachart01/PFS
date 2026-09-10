@@ -83,7 +83,7 @@ export function AdminPanel({
   const stats = useMemo(() => ({
     total: students.length,
     published: students.filter((s) => s.portfolioStatus === "published").length,
-    draft: students.filter((s) => s.portfolioStatus === "draft").length,
+    draft: students.filter((s) => s.portfolioStatus === "draft" || s.portfolioStatus === "unpublished").length,
     noPortfolio: students.filter((s) => !s.portfolioStatus).length
   }), [students]);
 
@@ -544,6 +544,8 @@ export function AdminPanel({
                           ? "เผยแพร่แล้ว"
                           : s.portfolioStatus === "draft"
                           ? "ฉบับร่าง"
+                          : s.portfolioStatus === "unpublished"
+                          ? "ปิดเผยแพร่"
                           : "ยังไม่สร้าง"}
                       </span>
                     </td>

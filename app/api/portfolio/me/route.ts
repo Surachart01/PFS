@@ -8,6 +8,8 @@ import type { PortfolioDoc, PortfolioStatus, TemplateId } from "@/lib/types";
 
 const allowedThemes = ["modern", "classic", "minimal"] as const;
 const allowedTemplates: TemplateId[] = ["professional", "modern", "creative", "minimal", "academic", "compact"];
+const allowedFonts = ["Inter", "Noto Sans Thai", "Prompt", "Kanit", "Sarabun", "Chakra Petch", "Fira Code", "Outfit"];
+const allowedBgThemes = ["default", "dark-slate", "glassmorphism", "mesh-gradient", "sunset", "nordic"];
 
 /**
  * ฟังก์ชัน 4.4: ดึงข้อมูล Portfolio ของนักศึกษาปัจจุบัน (Get My Portfolio API)
@@ -41,13 +43,14 @@ export async function PUT(request: NextRequest) {
   const requestedSlug = String(body?.slug || current.slug).trim().toLowerCase();
   const slug = await uniqueSlug(requestedSlug, current._id);
   const theme = allowedThemes.includes(body?.theme) ? body.theme : current.theme;
-  const status: PortfolioStatus = current.status === "published" ? "published" : "draft";
+  const status: PortfolioStatus = current.status === "published" ? "published" : current.status === "unpublished" ? "unpublished" : "draft";
   const templateId: TemplateId = allowedTemplates.includes(body?.templateId) ? body.templateId : (current.templateId || "professional");
   const styleSettings = {
     primaryColor: /^#[0-9a-f]{6}$/i.test(body?.styleSettings?.primaryColor) ? body.styleSettings.primaryColor : current.styleSettings.primaryColor,
-    fontFamily: "Inter",
+    fontFamily: allowedFonts.includes(body?.styleSettings?.fontFamily) ? body.styleSettings.fontFamily : (current.styleSettings.fontFamily || "Inter"),
     fontSize: Math.max(14, Math.min(20, Number(body?.styleSettings?.fontSize || current.styleSettings.fontSize))),
-    layout: body?.styleSettings?.layout || current.styleSettings.layout
+    layout: body?.styleSettings?.layout || current.styleSettings.layout,
+    backgroundTheme: allowedBgThemes.includes(body?.styleSettings?.backgroundTheme) ? body.styleSettings.backgroundTheme : (current.styleSettings.backgroundTheme || "default")
   };
 
   let sections;

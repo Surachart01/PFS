@@ -58,7 +58,8 @@ export async function POST(request: NextRequest) {
   const email = String(body?.email || "").trim().toLowerCase();
   const password = String(body?.password || studentId);
   const department = String(body?.department || "Computer Engineering").trim();
-  const year = Number(body?.year || 1);
+  const rawYear = Number(body?.year);
+  const year = Number.isFinite(rawYear) && rawYear >= 1 && rawYear <= 8 ? Math.floor(rawYear) : 1;
 
   if (!studentId || !firstName || !lastName || !email) {
     return NextResponse.json({ message: "กรุณากรอกข้อมูลนักศึกษาให้ครบ" }, { status: 400 });

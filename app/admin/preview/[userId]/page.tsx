@@ -75,11 +75,11 @@ export default async function AdminPortfolioPreviewPage({
             borderRadius: "6px",
             fontSize: "12px",
             fontWeight: 600,
-            background: resume.status === "published" ? "#065F46" : "#78350F",
-            color: resume.status === "published" ? "#A7F3D0" : "#FDE68A"
+            background: resume.status === "published" ? "#065F46" : resume.status === "unpublished" ? "#475569" : "#78350F",
+            color: resume.status === "published" ? "#A7F3D0" : resume.status === "unpublished" ? "#F1F5F9" : "#FDE68A"
           }}>
             {resume.status === "published" ? <CheckCircle size={13} /> : <Clock size={13} />}
-            {resume.status === "published" ? "เผยแพร่แล้ว (Published)" : "ฉบับร่าง (Draft)"}
+            {resume.status === "published" ? "เผยแพร่แล้ว (Published)" : resume.status === "unpublished" ? "ปิดเผยแพร่ (Unpublished)" : "ฉบับร่าง (Draft)"}
           </span>
           <span style={{ color: "#94A3B8", fontSize: "12px" }}>
             อัปเดตล่าสุด: {new Date(resume.updatedAt).toLocaleString("th-TH")}

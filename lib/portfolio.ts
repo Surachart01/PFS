@@ -302,7 +302,8 @@ function sanitizeSectionSettings(section: PortfolioSection): PortfolioSectionSet
     imagePosition: pickSetting(settings.imagePosition, settingOptions.imagePosition, defaults.imagePosition),
     itemStyle: pickSetting(settings.itemStyle, settingOptions.itemStyle, defaults.itemStyle),
     borderStyle: pickSetting(settings.borderStyle, settingOptions.borderStyle, defaults.borderStyle),
-    cardVariant: pickSetting(settings.cardVariant, settingOptions.cardVariant, defaults.cardVariant)
+    cardVariant: pickSetting(settings.cardVariant, settingOptions.cardVariant, defaults.cardVariant),
+    column: settings.column === "right" || settings.column === "left" ? settings.column : defaults.column
   };
 }
 

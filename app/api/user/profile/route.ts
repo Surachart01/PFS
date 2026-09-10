@@ -43,7 +43,8 @@ export async function PUT(request: NextRequest) {
   const firstName = String(body?.firstName || "").trim();
   const lastName = String(body?.lastName || "").trim();
   const department = String(body?.department || "").trim();
-  const year = Number(body?.year || user.year || 1);
+  const rawYear = Number(body?.year ?? user.year);
+  const year = Number.isFinite(rawYear) && rawYear >= 1 && rawYear <= 8 ? Math.floor(rawYear) : (user.year || 1);
 
   if (!firstName || !lastName) {
     return NextResponse.json({ message: "ชื่อและนามสกุลต้องไม่เว้นว่าง" }, { status: 400 });

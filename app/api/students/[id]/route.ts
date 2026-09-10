@@ -29,7 +29,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   const lastName = String(body?.lastName || "").trim();
   const email = String(body?.email || "").trim().toLowerCase();
   const department = String(body?.department || "Computer Engineering").trim();
-  const year = Number(body?.year || 1);
+  const rawYear = Number(body?.year);
+  const year = Number.isFinite(rawYear) && rawYear >= 1 && rawYear <= 8 ? Math.floor(rawYear) : 1;
 
   if (!studentId || !firstName || !lastName || !email) {
     return NextResponse.json({ message: "กรุณากรอกข้อมูลนักศึกษาให้ครบถ้วน" }, { status: 400 });
