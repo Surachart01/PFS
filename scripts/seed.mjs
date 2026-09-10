@@ -23,7 +23,7 @@ for (const envPath of [".env.local", ".env"]) {
 
 const uri = process.env.MONGODB_URI || "mongodb://localhost:27017/portfolio_system";
 const dbName = process.env.MONGODB_DB || "portfolio_system";
-const adminEmail = process.env.ADMIN_EMAIL || "admin@pfs.local";
+const adminEmail = process.env.ADMIN_EMAIL || "admin@kmitl.ac.th";
 const adminPassword = process.env.ADMIN_PASSWORD || "Admin@1234";
 
 function hashPassword(password) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { createSessionToken, hashPassword, setSessionCookie, verifyPassword } from "@/lib/auth";
+import { createSessionToken, hashPassword, isValidKmitlEmail, setSessionCookie, verifyPassword } from "@/lib/auth";
 import { ensureIndexes, getDb } from "@/lib/mongodb";
 import type { UserDoc } from "@/lib/types";
 
@@ -22,13 +22,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "กรุณากรอกข้อมูลให้ครบ" }, { status: 400 });
     }
 
+    if (identifier.includes("@") && !isValidKmitlEmail(identifier)) {
+      return NextResponse.json({ message: "อีเมลต้องใช้อีเมลสถาบัน (@kmitl.ac.th) เท่านั้น" }, { status: 400 });
+    }
+
     const db = await getDb();
     let user = await db.collection<UserDoc>("users").findOne({
       $or: [{ email: identifier }, { studentId: identifier }],
       status: "active"
     });
 
-    const adminEmail = (process.env.ADMIN_EMAIL || "admin@pfs.local").trim().toLowerCase();
+    const adminEmail = (process.env.ADMIN_EMAIL || "admin@kmitl.ac.th").trim().toLowerCase();
     const adminPassword = process.env.ADMIN_PASSWORD || "Admin@1234";
 
     // Auto-seed Admin account on Vercel/Cloud DB if users collection is empty or Admin login matches env vars

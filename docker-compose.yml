@@ -9,7 +9,7 @@ services:
       MONGODB_URI: mongodb://mongo:27017/portfolio_system
       MONGODB_DB: portfolio_system
       AUTH_SECRET: change-this-secret-before-production
-      ADMIN_EMAIL: admin@pfs.local
+      ADMIN_EMAIL: admin@kmitl.ac.th
       ADMIN_PASSWORD: Admin@1234
       NEXT_PUBLIC_APP_URL: http://localhost:3001
     depends_on:

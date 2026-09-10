@@ -130,13 +130,18 @@ export function AdminPanel({
    */
   async function addStudent(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const cleanEmail = form.email.trim().toLowerCase();
+    if (!cleanEmail.endsWith("@kmitl.ac.th")) {
+      setMessage({ text: "อีเมลต้องใช้อีเมลสถาบัน (@kmitl.ac.th) เท่านั้น", type: "error" });
+      return;
+    }
     setLoading(true);
     setMessage({ text: "", type: "" });
 
     const res = await fetch("/api/students", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, year: Number(form.year) })
+      body: JSON.stringify({ ...form, email: cleanEmail, year: Number(form.year) })
     });
 
     const data = await res.json().catch(() => ({}));
@@ -172,12 +177,17 @@ export function AdminPanel({
   async function handleUpdateStudent(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!editingStudent) return;
+    const cleanEmail = editForm.email.trim().toLowerCase();
+    if (!cleanEmail.endsWith("@kmitl.ac.th")) {
+      setMessage({ text: "อีเมลต้องใช้อีเมลสถาบัน (@kmitl.ac.th) เท่านั้น", type: "error" });
+      return;
+    }
     setLoading(true);
 
     const res = await fetch(`/api/students/${editingStudent.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...editForm, year: Number(editForm.year) })
+      body: JSON.stringify({ ...editForm, email: cleanEmail, year: Number(editForm.year) })
     });
 
     const data = await res.json().catch(() => ({}));
@@ -633,8 +643,19 @@ export function AdminPanel({
                   <input
                     className="input"
                     id="studentId"
-                    onChange={(e) => setForm({ ...form, studentId: e.target.value })}
-                    placeholder="64XXXXXXX"
+                    onChange={(e) => {
+                      const nextId = e.target.value;
+                      setForm((prev) => {
+                        const prevExpected = prev.studentId ? `${prev.studentId}@kmitl.ac.th` : "";
+                        const shouldUpdateEmail = !prev.email || prev.email === prevExpected;
+                        return {
+                          ...prev,
+                          studentId: nextId,
+                          email: shouldUpdateEmail ? (nextId ? `${nextId}@kmitl.ac.th` : "") : prev.email
+                        };
+                      });
+                    }}
+                    placeholder="65XXXXXXX"
                     required
                     value={form.studentId}
                   />
@@ -684,11 +705,14 @@ export function AdminPanel({
                   className="input"
                   id="email"
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="email@example.com"
+                  placeholder="65010001@kmitl.ac.th"
                   required
                   type="email"
                   value={form.email}
                 />
+                <p style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>
+                  * ต้องใช้อีเมลสถาบัน (@kmitl.ac.th) เท่านั้น
+                </p>
               </div>
               <div className="field">
                 <label htmlFor="department">สาขา/ภาควิชา</label>
@@ -802,10 +826,14 @@ export function AdminPanel({
                   className="input"
                   id="edit-email"
                   onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  placeholder="65010001@kmitl.ac.th"
                   required
                   type="email"
                   value={editForm.email}
                 />
+                <p style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>
+                  * ต้องใช้อีเมลสถาบัน (@kmitl.ac.th) เท่านั้น
+                </p>
               </div>
               <div className="field">
                 <label htmlFor="edit-department">สาขา/ภาควิชา</label>

@@ -103,7 +103,7 @@ const blockTemplates: BlockTemplate[] = [
     accentColor: "#0f766e",
     backgroundColor: "#ecfdf5",
     columns: 2,
-    body: "ชื่อ-นามสกุล\nComputer Engineering | Year 4\nemail@example.com"
+    body: "ชื่อ-นามสกุล\nComputer Engineering | Year 4\nstudent@kmitl.ac.th"
   },
   {
     type: "education",
@@ -124,7 +124,7 @@ const blockTemplates: BlockTemplate[] = [
     accentColor: "#475569",
     backgroundColor: "#f8fafc",
     columns: 2,
-    body: "Email: email@example.com\nGitHub: github.com/username\nLinkedIn: linkedin.com/in/username"
+    body: "Email: student@kmitl.ac.th\nGitHub: github.com/username\nLinkedIn: linkedin.com/in/username"
   },
   {
     type: "about",

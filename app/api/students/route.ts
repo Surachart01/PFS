@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 
-import { hashPassword, requireApiUser } from "@/lib/auth";
+import { hashPassword, isValidKmitlEmail, requireApiUser } from "@/lib/auth";
 import { getDb } from "@/lib/mongodb";
 import type { PortfolioDoc, UserDoc } from "@/lib/types";
 
@@ -62,6 +62,10 @@ export async function POST(request: NextRequest) {
 
   if (!studentId || !firstName || !lastName || !email) {
     return NextResponse.json({ message: "กรุณากรอกข้อมูลนักศึกษาให้ครบ" }, { status: 400 });
+  }
+
+  if (!isValidKmitlEmail(email)) {
+    return NextResponse.json({ message: "อีเมลต้องใช้อีเมลสถาบัน (@kmitl.ac.th) เท่านั้น" }, { status: 400 });
   }
 
   const db = await getDb();

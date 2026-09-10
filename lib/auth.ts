@@ -202,3 +202,16 @@ export async function requireApiUser(roles?: UserRole[]) {
   }
   return { user, response: null };
 }
+
+/**
+ * ฟังก์ชัน 1.15: ตรวจสอบความถูกต้องของอีเมลสถาบัน (@kmitl.ac.th)
+ * หน้าที่: ตรวจสอบรูปแบบอีเมลและบังคับให้ลงท้ายด้วยโดเมน @kmitl.ac.th เท่านั้น
+ * พารามิเตอร์: email - ที่อยู่อีเมลที่ต้องการตรวจสอบ
+ * คืนค่า: boolean (true หากเป็นอีเมล @kmitl.ac.th ที่ถูกต้อง, false หากไม่ใช่)
+ */
+export function isValidKmitlEmail(email: string): boolean {
+  if (!email || typeof email !== "string") return false;
+  const trimmed = email.trim().toLowerCase();
+  return /^[a-zA-Z0-9._%+-]+@kmitl\.ac\.th$/.test(trimmed);
+}
+

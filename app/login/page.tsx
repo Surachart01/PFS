@@ -6,7 +6,7 @@ import { FormEvent, useState } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [identifier, setIdentifier] = useState("admin@pfs.local");
+  const [identifier, setIdentifier] = useState("admin@kmitl.ac.th");
   const [password, setPassword] = useState("Admin@1234");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -14,12 +14,19 @@ export default function LoginPage() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+
+    const cleanIdentifier = identifier.trim();
+    if (cleanIdentifier.includes("@") && !cleanIdentifier.toLowerCase().endsWith("@kmitl.ac.th")) {
+      setError("อีเมลต้องใช้อีเมลสถาบัน (@kmitl.ac.th) เท่านั้น");
+      return;
+    }
+
     setLoading(true);
 
     const response = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier, password })
+      body: JSON.stringify({ identifier: cleanIdentifier, password })
     });
 
     setLoading(false);
@@ -54,7 +61,7 @@ export default function LoginPage() {
                 className="input"
                 id="identifier"
                 onChange={(event) => setIdentifier(event.target.value)}
-                placeholder="admin@pfs.local"
+                placeholder="admin@kmitl.ac.th หรือ รหัสนักศึกษา"
                 value={identifier}
               />
             </div>

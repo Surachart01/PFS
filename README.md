@@ -21,8 +21,8 @@
 
 | บทบาท (Role) | บัญชีเข้าใช้งานเริ่มต้น | สิทธิ์และการใช้งาน |
 |---|---|---|
-| **Student (นักศึกษา)** | `student@pfs.local` / `Student@1234` | ออกแบบ Resume, เลือก Template, ปรับแต่งสี/ฟอนต์, อัปโหลดรูปภาพ, เผยแพร่ (Publish/Unpublish) |
-| **Admin (ผู้ดูแลระบบ)** | `admin@pfs.local` / `Admin@1234` | ตรวจสอบรายชื่อนักศึกษาทั้งหมด, ดูสถานะการเผยแพร่ Portfolio, จัดการข้อมูลผู้ใช้งาน |
+| **Student (นักศึกษา)** | `student@kmitl.ac.th` (หรือรหัส `65010001`) / `Student@1234` | ออกแบบ Resume, เลือก Template, ปรับแต่งสี/ฟอนต์, อัปโหลดรูปภาพ, เผยแพร่ (Publish/Unpublish) |
+| **Admin (ผู้ดูแลระบบ)** | `admin@kmitl.ac.th` / `Admin@1234` | ตรวจสอบรายชื่อนักศึกษาทั้งหมด, ดูสถานะการเผยแพร่ Portfolio, จัดการข้อมูลผู้ใช้งาน |
 
 ---
 
@@ -156,7 +156,7 @@
 MONGODB_URI=mongodb://127.0.0.1:27017/portfolio_system
 MONGODB_DB=portfolio_system
 AUTH_SECRET=development-secret-change-me
-ADMIN_EMAIL=admin@pfs.local
+ADMIN_EMAIL=admin@kmitl.ac.th
 ADMIN_PASSWORD=Admin@1234
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```

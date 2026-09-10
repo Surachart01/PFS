@@ -446,7 +446,7 @@ export function applyTemplate(templateId: TemplateId, existingSections: Portfoli
  */
 function getDefaultContent(type: PortfolioSection["type"], user?: UserDoc) {
   const fullName = user ? `${user.firstName} ${user.lastName}`.trim() : "ชื่อ-นามสกุล";
-  const email = user?.email || "email@example.com";
+  const email = user?.email || "student@kmitl.ac.th";
   const dept = user?.department || "Computer Engineering";
   const yearStr = user?.year ? ` | Year ${user.year}` : "";
 
