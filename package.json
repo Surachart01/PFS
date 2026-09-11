@@ -6,7 +6,9 @@
     "dev": "next dev -H 0.0.0.0",
     "build": "next build --webpack",
     "start": "next start -H 0.0.0.0",
-    "seed": "node scripts/seed.mjs"
+    "seed": "node scripts/seed.mjs",
+    "docker:db": "docker compose up -d mongo",
+    "docker:down": "docker compose down"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
