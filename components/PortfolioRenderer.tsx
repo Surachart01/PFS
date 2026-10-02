@@ -15,7 +15,7 @@ import {
   UserRound
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { PortfolioSection, PortfolioSectionSettings, PortfolioStyleSettings } from "@/lib/types";
+import type { PortfolioSection, PortfolioStyleSettings } from "@/lib/types";
 import type { CSSProperties } from "react";
 
 const sectionIcons: Record<PortfolioSection["type"], LucideIcon> = {
@@ -34,7 +34,7 @@ function sectionItems(section: PortfolioSection) {
   return section.content.items?.filter(Boolean) || [];
 }
 
-function sectionSettings(section: PortfolioSection): Required<PortfolioSectionSettings> {
+function sectionSettings(section: PortfolioSection) {
   return {
     showTitle: section.settings?.showTitle !== false,
     alignment: section.settings?.alignment || "left",

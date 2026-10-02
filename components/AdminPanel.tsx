@@ -251,7 +251,7 @@ export function AdminPanel({
    * หน้าที่: แสดงกล่องเตือนยืนยัน แล้วส่งคำขอ DELETE /api/students/[id] ลบข้อมูลออกจากฐานข้อมูลอย่างถาวร
    */
   async function handleDeleteStudent(student: AdminStudent) {
-    if (!confirm(`⚠️ ยืนยันการลบบัญชีนักศึกษา "${student.firstName} ${student.lastName}" (${student.studentId})?\nการกระทำนี้จะลบทั้งบัญชีและผลงาน Portfolio ทั้งหมดออกจากระบบอย่างถาวร!`)) {
+    if (!confirm(`⚠️ ยืนยันการลบบัญชีนักศึกษา "${student.firstName} ${student.lastName}" (${student.studentId})?\nการกระทำนี้จะลบทั้งบัญชีและ Resume ทั้งหมดออกจากระบบอย่างถาวร!`)) {
       return;
     }
 
@@ -281,15 +281,15 @@ export function AdminPanel({
     : activeTab === "students"
     ? "รายชื่อนักศึกษาทั้งหมด"
     : activeTab === "published"
-    ? "Portfolio ที่เผยแพร่แล้ว"
+    ? "Resume ที่เผยแพร่แล้ว"
     : "การจัดการบัญชีนักศึกษา";
 
   const pageDesc = activeTab === "dashboard"
-    ? "ภาพรวมนักศึกษา, สถิติระบบ, และสถานะ Portfolio ทั้งหมด"
+    ? "ภาพรวมนักศึกษา สถิติระบบ และสถานะ Resume ทั้งหมด"
     : activeTab === "students"
     ? `แสดงรายชื่อนักศึกษาทั้งหมดในระบบ (${students.length} บัญชี)`
     : activeTab === "published"
-    ? `แสดงเฉพาะนักศึกษาที่เปิดเผยแพร่ Portfolio สู่สาธารณะแล้ว (${stats.published} ผลงาน)`
+    ? `แสดงเฉพาะนักศึกษาที่เผยแพร่ Resume แล้ว (${stats.published} ผลงาน)`
     : "บริหารจัดการสิทธิ์บัญชีผู้ใช้ (ระงับ/เปิดใช้, รีเซ็ตรหัสผ่าน, ลบบัญชี, แก้ไขข้อมูล)";
 
   return (
@@ -331,7 +331,7 @@ export function AdminPanel({
           className={`adm-stat-card adm-stat-green ${activeTab === "published" ? "active-stat" : ""}`}
           onClick={() => setActiveTab("published")}
           style={{ cursor: "pointer" }}
-          title="คลิกเพื่อดู Portfolio ที่เผยแพร่แล้ว"
+          title="คลิกเพื่อดู Resume ที่เผยแพร่แล้ว"
         >
           <div className="adm-stat-card-row">
             <div className="adm-stat-icon-box">
@@ -394,7 +394,7 @@ export function AdminPanel({
           fontSize: "14px"
         }}>
           <span>
-            📌 <strong>กำลังกรอง:</strong> แสดงเฉพาะนักศึกษาที่เปิดเผยแพร่ Portfolio แล้ว ({stats.published} รายการ)
+            📌 <strong>กำลังกรอง:</strong> แสดงเฉพาะนักศึกษาที่เผยแพร่ Resume แล้ว ({stats.published} รายการ)
           </span>
           <button
             className="btn"
@@ -479,7 +479,7 @@ export function AdminPanel({
                   className="adm-th-sortable"
                   onClick={() => toggleSort("portfolioStatus")}
                 >
-                  <span>Portfolio</span>
+                  <span>Resume</span>
                   <SortIcon col="portfolioStatus" />
                 </th>
                 <th>ตรวจผลงาน</th>
@@ -628,7 +628,7 @@ export function AdminPanel({
             <div className="adm-drawer-header">
               <div>
                 <h2>เพิ่มนักศึกษาใหม่</h2>
-                <p>สร้างบัญชีให้นักศึกษาเพื่อเริ่มสร้าง Portfolio</p>
+                <p>สร้างบัญชีให้นักศึกษาเพื่อเริ่มสร้าง Resume</p>
               </div>
               <button
                 className="adm-drawer-close"

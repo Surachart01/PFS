@@ -1,4 +1,4 @@
-import { ArrowLeft, LayoutDashboard, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 import { LogoutButton } from "@/components/LogoutButton";
@@ -45,22 +45,6 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <Link
-            className="btn"
-            href="/dashboard"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "6px 12px",
-              fontSize: "13px",
-              textDecoration: "none"
-            }}
-            target="_blank"
-          >
-            <LayoutDashboard size={14} />
-            <span>สารบบสาธารณะ</span>
-          </Link>
           <LogoutButton />
         </div>
       </header>

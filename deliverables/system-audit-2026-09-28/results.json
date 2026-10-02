@@ -1,0 +1,281 @@
+[
+  {
+    "name": "Admin login",
+    "passed": true
+  },
+  {
+    "name": "Anonymous cannot read students",
+    "passed": true
+  },
+  {
+    "name": "Anonymous cannot read resume",
+    "passed": true
+  },
+  {
+    "name": "Wrong password rejected",
+    "passed": true
+  },
+  {
+    "name": "Admin creates audit20260928a",
+    "passed": true,
+    "detail": {
+      "status": 201
+    }
+  },
+  {
+    "name": "Admin creates audit20260928b",
+    "passed": true,
+    "detail": {
+      "status": 201
+    }
+  },
+  {
+    "name": "Student login by ID",
+    "passed": true
+  },
+  {
+    "name": "Student cannot list admin data",
+    "passed": true
+  },
+  {
+    "name": "Student cannot change another student",
+    "passed": true
+  },
+  {
+    "name": "Student cannot open admin preview",
+    "passed": true
+  },
+  {
+    "name": "Save and reload resume",
+    "passed": true
+  },
+  {
+    "name": "Independent block colors persist",
+    "passed": true
+  },
+  {
+    "name": "Other student remains unchanged",
+    "passed": true
+  },
+  {
+    "name": "Draft hidden from anonymous visitors",
+    "passed": true
+  },
+  {
+    "name": "Admin can preview draft",
+    "passed": true
+  },
+  {
+    "name": "Publish opens public URL",
+    "passed": true
+  },
+  {
+    "name": "Browser login and redirect",
+    "passed": true
+  },
+  {
+    "name": "Editor respects per-block colors and alignment",
+    "passed": false,
+    "detail": {
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "aboutImageCount": 0,
+      "aboutBackground": "rgba(0, 0, 0, 0)",
+      "bannerBackground": "rgb(15, 118, 110)",
+      "textAlign": "start",
+      "noAccessibleLabel": 8,
+      "selectableDivs": 8,
+      "deleteButtons": 0
+    }
+  },
+  {
+    "name": "Uploaded non-profile image rendered",
+    "passed": false
+  },
+  {
+    "name": "Editor fits desktop viewport",
+    "passed": true,
+    "detail": {
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "aboutImageCount": 0,
+      "aboutBackground": "rgba(0, 0, 0, 0)",
+      "bannerBackground": "rgb(15, 118, 110)",
+      "textAlign": "start",
+      "noAccessibleLabel": 8,
+      "selectableDivs": 8,
+      "deleteButtons": 0
+    }
+  },
+  {
+    "name": "Editor form controls have accessible labels",
+    "passed": false,
+    "detail": {
+      "missing": 8
+    }
+  },
+  {
+    "name": "Selected block has delete action",
+    "passed": false
+  },
+  {
+    "name": "Drag asset into document adds block",
+    "passed": true
+  },
+  {
+    "name": "Unpublish preserves unsaved edits",
+    "passed": false,
+    "detail": {
+      "remainingFields": [],
+      "blockCount": 7
+    }
+  },
+  {
+    "name": "Unpublish closes public URL",
+    "passed": true
+  },
+  {
+    "name": "Editor fits mobile viewport",
+    "passed": false,
+    "detail": {
+      "viewport": 390,
+      "documentWidth": 391
+    }
+  },
+  {
+    "name": "Available font survives save",
+    "passed": false,
+    "detail": {
+      "storedFont": "Inter"
+    }
+  },
+  {
+    "name": "Template switch preserves repeated section types",
+    "passed": false,
+    "detail": {
+      "before": 7,
+      "after": 7,
+      "duplicatePresent": false
+    }
+  },
+  {
+    "name": "Modern template shows contact body",
+    "passed": false
+  },
+  {
+    "name": "Public resume fits desktop viewport",
+    "passed": true,
+    "detail": {
+      "viewport": 1440,
+      "documentWidth": 1440
+    }
+  },
+  {
+    "name": "No browser runtime exceptions in tested path",
+    "passed": true,
+    "detail": []
+  },
+  {
+    "name": "Password change succeeds",
+    "passed": true
+  },
+  {
+    "name": "Password change revokes old session",
+    "passed": false
+  },
+  {
+    "name": "Old password rejected after change",
+    "passed": true
+  },
+  {
+    "name": "New password accepted after change",
+    "passed": true
+  },
+  {
+    "name": "Logout revokes copied session token",
+    "passed": false
+  },
+  {
+    "name": "Inactive account cannot use prior session",
+    "passed": true
+  },
+  {
+    "name": "Inactive account login rejected",
+    "passed": true
+  },
+  {
+    "name": "Malformed section yields validation error rather than server error",
+    "passed": false,
+    "detail": {
+      "status": 500
+    }
+  },
+  {
+    "name": "Admin deletes test student and resume 6aba14f93bcd59bfc5e9c956",
+    "passed": true
+  },
+  {
+    "name": "Admin deletes test student and resume 6aba14f93bcd59bfc5e9c957",
+    "passed": true
+  },
+  {
+    "name": "Deleted resume no longer public",
+    "passed": true
+  },
+  {
+    "name": "Admin dashboard loads",
+    "passed": true
+  },
+  {
+    "name": "Canvas content fits 1440",
+    "passed": false,
+    "detail": {
+      "viewport": 1440,
+      "layoutWidth": 582,
+      "layoutScrollWidth": 601,
+      "clipOverflow": "hidden",
+      "wrapWidth": 654,
+      "mainRight": 989.765625,
+      "layoutRight": 971,
+      "documentWidth": 1440
+    }
+  },
+  {
+    "name": "Canvas content fits 390",
+    "passed": false,
+    "detail": {
+      "viewport": 390,
+      "layoutWidth": 212,
+      "layoutScrollWidth": 281,
+      "clipOverflow": "hidden",
+      "wrapWidth": 284,
+      "mainRight": 369.765625,
+      "layoutRight": 301,
+      "documentWidth": 390
+    }
+  },
+  {
+    "name": "Public mobile professional",
+    "passed": true,
+    "detail": {
+      "viewport": 390,
+      "documentWidth": 390
+    }
+  },
+  {
+    "name": "Public mobile modern",
+    "passed": true,
+    "detail": {
+      "viewport": 390,
+      "documentWidth": 390
+    }
+  },
+  {
+    "name": "Public mobile minimal",
+    "passed": true,
+    "detail": {
+      "viewport": 390,
+      "documentWidth": 390
+    }
+  }
+]

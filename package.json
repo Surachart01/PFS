@@ -6,6 +6,7 @@
     "dev": "next dev -H 0.0.0.0",
     "build": "next build --webpack",
     "start": "next start -H 0.0.0.0",
+    "test:e2e": "node deliverables/resume-studio-dev/e2e.mjs",
     "seed": "node scripts/seed.mjs",
     "docker:db": "docker compose up -d mongo",
     "docker:down": "docker compose down"
@@ -15,12 +16,15 @@
     "mongodb": "^6.12.0",
     "next": "^16.2.11",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-rnd": "10.5.3"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.2",
+    "playwright": "1.63.0",
+    "sharp": "^0.35.3",
     "typescript": "^5.7.2"
   },
   "overrides": {

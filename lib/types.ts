@@ -34,6 +34,13 @@ export type PortfolioSectionSettings = {
   borderStyle?: SectionBorderStyle;
   cardVariant?: SectionCardVariant;
   column?: "left" | "right";
+  contentMode?: "section" | "text" | "image";
+  fontFamily?: string;
+  fontSize?: number;
+  fontWeight?: number;
+  textColor?: string;
+  lineHeight?: number;
+  imageFit?: "cover" | "contain";
 };
 
 export type PortfolioSectionFrame = {
@@ -96,6 +103,7 @@ export type PortfolioDoc = {
   status: PortfolioStatus;
   theme: "modern" | "classic" | "minimal";
   templateId?: TemplateId;
+  layoutVersion?: 1;
   styleSettings: PortfolioStyleSettings;
   sections: PortfolioSection[];
   publishedAt?: Date | null;

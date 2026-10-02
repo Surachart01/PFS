@@ -3,12 +3,12 @@ import { ObjectId } from "mongodb";
 
 import { requireApiUser } from "@/lib/auth";
 import { getDb } from "@/lib/mongodb";
-import { applyTemplate, getOrCreatePortfolio, sanitizeSections, serializePortfolio, uniqueSlug } from "@/lib/portfolio";
+import { applyTemplate, getOrCreatePortfolio, sanitizeSections, serializePortfolio, uniqueSlug, validateSections } from "@/lib/portfolio";
+import { fontOptions } from "@/lib/resume-options";
 import type { PortfolioDoc, PortfolioStatus, TemplateId } from "@/lib/types";
 
 const allowedThemes = ["modern", "classic", "minimal"] as const;
 const allowedTemplates: TemplateId[] = ["professional", "modern", "creative", "minimal", "academic", "compact"];
-const allowedFonts = ["Inter", "Noto Sans Thai", "Prompt", "Kanit", "Sarabun", "Chakra Petch", "Fira Code", "Outfit"];
 const allowedBgThemes = ["default", "dark-slate", "glassmorphism", "mesh-gradient", "sunset", "nordic"];
 
 /**
@@ -38,6 +38,11 @@ export async function PUT(request: NextRequest) {
 
   const current = await getOrCreatePortfolio(user.id);
   const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object" || !Array.isArray(body.sections)) {
+    return NextResponse.json({ message: "ข้อมูล Resume ไม่ถูกต้อง" }, { status: 400 });
+  }
+  const validationError = validateSections(body.sections);
+  if (validationError) return NextResponse.json({ message: validationError }, { status: 400 });
 
   const title = String(body?.title || current.title).trim().slice(0, 120);
   const requestedSlug = String(body?.slug || current.slug).trim().toLowerCase();
@@ -47,7 +52,7 @@ export async function PUT(request: NextRequest) {
   const templateId: TemplateId = allowedTemplates.includes(body?.templateId) ? body.templateId : (current.templateId || "professional");
   const styleSettings = {
     primaryColor: /^#[0-9a-f]{6}$/i.test(body?.styleSettings?.primaryColor) ? body.styleSettings.primaryColor : current.styleSettings.primaryColor,
-    fontFamily: allowedFonts.includes(body?.styleSettings?.fontFamily) ? body.styleSettings.fontFamily : (current.styleSettings.fontFamily || "Inter"),
+    fontFamily: (fontOptions as readonly string[]).includes(body?.styleSettings?.fontFamily) ? body.styleSettings.fontFamily : (current.styleSettings.fontFamily || "Inter"),
     fontSize: Math.max(14, Math.min(20, Number(body?.styleSettings?.fontSize || current.styleSettings.fontSize))),
     layout: body?.styleSettings?.layout || current.styleSettings.layout,
     backgroundTheme: allowedBgThemes.includes(body?.styleSettings?.backgroundTheme) ? body.styleSettings.backgroundTheme : (current.styleSettings.backgroundTheme || "default")
@@ -73,6 +78,7 @@ export async function PUT(request: NextRequest) {
         theme,
         status,
         templateId,
+        layoutVersion: 1,
         styleSettings,
         sections,
         updatedAt: now
@@ -83,4 +89,3 @@ export async function PUT(request: NextRequest) {
   const updated = await db.collection<PortfolioDoc>("portfolios").findOne({ _id: current._id });
   return NextResponse.json({ portfolio: serializePortfolio(updated!) });
 }
-

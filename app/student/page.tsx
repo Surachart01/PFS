@@ -50,7 +50,7 @@ export default async function StudentDashboardPage() {
           </div>
           <div className="stu-stat-trend">
             <TrendingUp size={13} />
-            <span>Portfolio ของฉัน</span>
+            <span>Resume ของฉัน</span>
           </div>
         </div>
 
@@ -95,7 +95,7 @@ export default async function StudentDashboardPage() {
             </div>
           </div>
           <div className="stu-stat-trend">
-            <span>/r/{portfolio.slug}</span>
+            <span>/p/{portfolio.slug}</span>
           </div>
         </div>
       </div>
@@ -114,7 +114,7 @@ export default async function StudentDashboardPage() {
               <div>
                 <h2 className="stu-card-title">Resume Studio Canvas</h2>
                 <p className="stu-card-desc">
-                  จัดวาง Element บน Grid 12 คอลัมน์ ปรับธีม ฟอนต์ และสไตล์การ์ดได้อย่างอิสระ
+                  ลากวางบล็อกบนกระดาษ A4 ปรับขนาด สี ฟอนต์ และตำแหน่งได้อย่างอิสระ
                 </p>
               </div>
             </div>
@@ -152,7 +152,7 @@ export default async function StudentDashboardPage() {
               {portfolio.status === "published" ? (
                 <a
                   className="btn"
-                  href={`/r/${portfolio.slug}`}
+                  href={`/p/${portfolio.slug}`}
                   rel="noopener noreferrer"
                   target="_blank"
                 >
@@ -174,16 +174,16 @@ export default async function StudentDashboardPage() {
                   <Share2 size={18} />
                 </div>
                 <div>
-                  <h3 className="stu-card-title" style={{ fontSize: 16 }}>ลิงก์ Portfolio</h3>
+                  <h3 className="stu-card-title" style={{ fontSize: 16 }}>ลิงก์ Resume</h3>
                   <p className="stu-card-desc" style={{ fontSize: 12 }}>แชร์ให้ผู้อื่นหรือผู้ว่าจ้าง</p>
                 </div>
               </div>
               <div className="stu-link-box">
-                <span className="stu-link-text">/r/{portfolio.slug}</span>
+                <span className="stu-link-text">/p/{portfolio.slug}</span>
                 {portfolio.status === "published" ? (
                   <a
                     className="stu-link-btn"
-                    href={`/r/${portfolio.slug}`}
+                    href={`/p/${portfolio.slug}`}
                     rel="noopener noreferrer"
                     target="_blank"
                   >
@@ -206,19 +206,19 @@ export default async function StudentDashboardPage() {
               <ul className="stu-tips-list">
                 <li>
                   <span className="stu-tips-dot" />
-                  เลือก Template Gallery เพื่อจัดวาง Layout อัตโนมัติ
+                  เลือกเทมเพลต Professional, Modern หรือ Minimal เพื่อจัดหน้า
                 </li>
                 <li>
                   <span className="stu-tips-dot" />
-                  ปรับ Col/Row บน Grid Canvas เพื่อจัดบล็อกตามต้องการ
+                  ลาก ย่อขยาย และปรับพิกัด X/Y/W/H ของแต่ละบล็อกบน A4
                 </li>
                 <li>
                   <span className="stu-tips-dot" />
-                  เลือก Background Theme สีสันสวยๆ ได้ถึง 6 ธีม
+                  ปรับสี ฟอนต์ รูปภาพ และคอลัมน์ของบล็อกได้แยกกัน
                 </li>
                 <li>
                   <span className="stu-tips-dot" />
-                  กด Publish เพื่อแชร์ลิงก์ Portfolio ให้ผู้อื่นดูได้
+                  กดเผยแพร่เพื่อแชร์ลิงก์ Resume ให้ผู้อื่นดูได้
                 </li>
               </ul>
             </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import "./globals.css";
+import "./resume-studio.css";
 
 export const metadata: Metadata = {
   title: "Resume Builder System",

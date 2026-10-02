@@ -1,6 +1,8 @@
 import { ObjectId } from "mongodb";
 
 import { getDb } from "@/lib/mongodb";
+import { documentSize, fontOptions, imageDataLimit } from "@/lib/resume-options";
+import { preparePortfolio } from "@/lib/resume-document";
 import type {
   GridPlacement,
   PortfolioDoc,
@@ -24,10 +26,7 @@ export const defaultStyleSettings: PortfolioStyleSettings = {
   layout: "clean"
 };
 
-export const documentSize = {
-  width: 794,
-  height: 1123
-};
+export { documentSize };
 
 /* ------------------------------------------------------------------ */
 /*  Template definitions                                               */
@@ -64,12 +63,12 @@ export const templateDefinitions: TemplateDefinition[] = [
     accentColor: "#0f766e",
     previewGradient: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
     sections: [
-      { type: "profile", title: "ข้อมูลพื้นฐาน", gridPlacement: { colStart: 1, colEnd: 13, rowStart: 1, rowEnd: 3 }, columns: 2, accentColor: "#0f766e", backgroundColor: "#ecfdf5" },
+      { type: "profile", title: "ข้อมูลพื้นฐาน", gridPlacement: { colStart: 1, colEnd: 13, rowStart: 1, rowEnd: 3 }, columns: 1, accentColor: "#0f766e", backgroundColor: "#ecfdf5" },
       { type: "about", title: "แนะนำตัว", gridPlacement: { colStart: 1, colEnd: 7, rowStart: 3, rowEnd: 5 }, accentColor: "#2563eb", backgroundColor: "#eff6ff" },
       { type: "skills", title: "ทักษะ", gridPlacement: { colStart: 7, colEnd: 13, rowStart: 3, rowEnd: 5 }, columns: 2, accentColor: "#0891b2", backgroundColor: "#ecfeff" },
       { type: "projects", title: "โปรเจกต์", gridPlacement: { colStart: 1, colEnd: 7, rowStart: 5, rowEnd: 7 }, accentColor: "#ea580c", backgroundColor: "#fff7ed" },
       { type: "experience", title: "ประสบการณ์", gridPlacement: { colStart: 7, colEnd: 13, rowStart: 5, rowEnd: 7 }, accentColor: "#be123c", backgroundColor: "#fff1f2" },
-      { type: "contact", title: "ช่องทางติดต่อ", gridPlacement: { colStart: 1, colEnd: 13, rowStart: 7, rowEnd: 9 }, columns: 2, accentColor: "#475569", backgroundColor: "#f8fafc" }
+      { type: "contact", title: "ช่องทางติดต่อ", gridPlacement: { colStart: 1, colEnd: 13, rowStart: 7, rowEnd: 9 }, columns: 1, accentColor: "#475569", backgroundColor: "#f8fafc" }
     ]
   },
   {
@@ -243,7 +242,8 @@ function clampNumber(value: unknown, fallback: number, min: number, max: number)
  * พารามิเตอร์: section - บล็อกเนื้อหา
  * คืนค่า: Required<PortfolioSectionSettings> ออบเจกต์การตั้งค่าเริ่มต้นแบบครบถ้วน
  */
-function defaultSectionSettings(section: PortfolioSection): Required<PortfolioSectionSettings> {
+function defaultSectionSettings(section: PortfolioSection): Required<Omit<PortfolioSectionSettings,
+  "contentMode" | "fontFamily" | "fontSize" | "fontWeight" | "textColor" | "lineHeight" | "imageFit">> {
   return {
     showTitle: true,
     alignment: "left",
@@ -303,7 +303,14 @@ function sanitizeSectionSettings(section: PortfolioSection): PortfolioSectionSet
     itemStyle: pickSetting(settings.itemStyle, settingOptions.itemStyle, defaults.itemStyle),
     borderStyle: pickSetting(settings.borderStyle, settingOptions.borderStyle, defaults.borderStyle),
     cardVariant: pickSetting(settings.cardVariant, settingOptions.cardVariant, defaults.cardVariant),
-    column: settings.column === "right" || settings.column === "left" ? settings.column : defaults.column
+    column: settings.column === "right" || settings.column === "left" ? settings.column : defaults.column,
+    contentMode: pickSetting(settings.contentMode, ["section", "text", "image"] as const, "section"),
+    fontFamily: typeof settings.fontFamily === "string" && (fontOptions as readonly string[]).includes(settings.fontFamily) ? settings.fontFamily : undefined,
+    fontSize: settings.fontSize === undefined ? undefined : clampNumber(settings.fontSize, 16, 10, 42),
+    fontWeight: settings.fontWeight === 700 ? 700 : settings.fontWeight === 600 ? 600 : settings.fontWeight === 400 ? 400 : undefined,
+    textColor: /^#[0-9a-f]{6}$/i.test(String(settings.textColor || "")) ? settings.textColor : undefined,
+    lineHeight: settings.lineHeight === undefined ? undefined : Math.max(1, Math.min(2, Number(settings.lineHeight) || 1.5)),
+    imageFit: settings.imageFit === "contain" ? "contain" : "cover"
   };
 }
 
@@ -316,8 +323,8 @@ function sanitizeSectionSettings(section: PortfolioSection): PortfolioSectionSet
 function sanitizeSectionFrame(section: PortfolioSection): PortfolioSectionFrame {
   const defaults = defaultSectionFrame(section);
   const frame = section.frame || {};
-  const width = clampNumber(frame.width, defaults.width, 140, documentSize.width);
-  const height = clampNumber(frame.height, defaults.height, 80, documentSize.height);
+  const width = clampNumber(frame.width, defaults.width, 120, documentSize.width);
+  const height = clampNumber(frame.height, defaults.height, 72, documentSize.height);
   return {
     x: clampNumber(frame.x, defaults.x, 0, documentSize.width - width),
     y: clampNumber(frame.y, defaults.y, 0, documentSize.height - height),
@@ -382,10 +389,12 @@ function withSectionStyle(section: PortfolioSection): PortfolioSection {
 export function applyTemplate(templateId: TemplateId, existingSections: PortfolioSection[], user?: UserDoc): PortfolioSection[] {
   const template = getTemplateDefinition(templateId);
   const result: PortfolioSection[] = [];
+  const usedIds = new Set<string>();
 
   for (const def of template.sections) {
-    const existing = existingSections.find((s) => s.type === def.type);
+    const existing = existingSections.find((s) => s.type === def.type && !usedIds.has(s.id));
     if (existing) {
+      usedIds.add(existing.id);
       result.push(withSectionStyle({
         ...existing,
         order: result.length + 1,
@@ -419,9 +428,9 @@ export function applyTemplate(templateId: TemplateId, existingSections: Portfoli
     }
   }
 
-  // Include remaining sections not in the template
+  // Keep every user-created section, including repeated types.
   for (const section of existingSections) {
-    if (!result.find((s) => s.type === section.type || s.id === section.id)) {
+    if (!usedIds.has(section.id)) {
       const lastRow = Math.max(...result.map((s) => s.gridPlacement?.rowEnd || 2), 2);
       result.push(withSectionStyle({
         ...section,
@@ -581,7 +590,7 @@ export async function getOrCreatePortfolio(userId: string) {
  * คืนค่า: SerializedPortfolio ออบเจกต์เรซูเม่รูปแบบ JSON ที่ปลอดภัย
  */
 export function serializePortfolio(portfolio: PortfolioDoc): SerializedPortfolio {
-  return {
+  return preparePortfolio({
     id: portfolio._id.toString(),
     userId: portfolio.userId.toString(),
     title: portfolio.title,
@@ -589,12 +598,13 @@ export function serializePortfolio(portfolio: PortfolioDoc): SerializedPortfolio
     status: portfolio.status,
     theme: portfolio.theme,
     templateId: portfolio.templateId || "professional",
+    layoutVersion: portfolio.layoutVersion,
     styleSettings: portfolio.styleSettings,
     sections: [...portfolio.sections].map(withSectionStyle).sort((a, b) => a.order - b.order),
     publishedAt: portfolio.publishedAt ? portfolio.publishedAt.toISOString() : null,
     createdAt: portfolio.createdAt.toISOString(),
     updatedAt: portfolio.updatedAt.toISOString()
-  };
+  });
 }
 
 /**
@@ -618,10 +628,30 @@ export function sanitizeSections(sections: PortfolioSection[]): PortfolioSection
     gridPlacement: sanitizeGridPlacement(section.gridPlacement),
     content: {
       body: String(section.content?.body || "").slice(0, 4000),
-      imageUrl: String(section.content?.imageUrl || "").slice(0, 1200000),
+      imageUrl: String(section.content?.imageUrl || ""),
       items: Array.isArray(section.content?.items)
         ? section.content.items.map((item) => String(item).trim().slice(0, 240)).filter(Boolean).slice(0, 20)
         : []
     }
   }));
+}
+
+export function validateSections(input: unknown): string | null {
+  if (!Array.isArray(input) || input.length > 40) return "จำนวนบล็อกไม่ถูกต้อง";
+  const ids = new Set<string>();
+  const allowedTypes = new Set(["profile", "about", "education", "skills", "projects", "experience", "certificates", "contact", "custom"]);
+  for (const section of input) {
+    if (!section || typeof section !== "object" || Array.isArray(section)) return "ข้อมูลบล็อกไม่ถูกต้อง";
+    if (typeof section.id !== "string" || !section.id || ids.has(section.id)) return "รหัสบล็อกซ้ำหรือไม่ถูกต้อง";
+    ids.add(section.id);
+    if (!allowedTypes.has(section.type)) return "ชนิดบล็อกไม่ถูกต้อง";
+    if (section.frame && Object.values(section.frame).some(value => typeof value === "number" && !Number.isFinite(value))) return "ตำแหน่งบล็อกไม่ถูกต้อง";
+    if (section.content && (typeof section.content !== "object" || Array.isArray(section.content))) return "เนื้อหาบล็อกไม่ถูกต้อง";
+    const image = section.content?.imageUrl;
+    if (image !== undefined && typeof image !== "string") return "รูปภาพไม่ถูกต้อง";
+    if (image?.startsWith("data:")) {
+      if (!/^data:image\/(png|jpeg|webp|gif);base64,/.test(image) || image.length > imageDataLimit || Buffer.byteLength(image.split(",")[1] || "", "base64") > 900 * 1024) return "รูปภาพใหญ่เกินไปหรือรูปแบบไม่รองรับ";
+    } else if (image && (!/^https?:\/\//.test(image) || image.length > 2048)) return "ลิงก์รูปภาพไม่ถูกต้อง";
+  }
+  return null;
 }

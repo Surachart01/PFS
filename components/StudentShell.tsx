@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  BookOpen,
   ExternalLink,
   GraduationCap,
   KeyRound,
@@ -236,13 +235,6 @@ export function StudentShell({
               <Pencil size={18} />
             </span>
             <span className="student-nav-text">แก้ไข Resume</span>
-          </Link>
-
-          <Link className="student-nav-item" href="/dashboard" target="_blank">
-            <span className="student-nav-icon">
-              <BookOpen size={18} />
-            </span>
-            <span className="student-nav-text">สารบบ Portfolio รวม</span>
           </Link>
 
           {portfolioStatus === "published" && portfolioSlug ? (

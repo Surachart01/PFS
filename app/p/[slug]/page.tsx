@@ -22,8 +22,8 @@ export default async function PublicPortfolioPage({ params }: { params: Promise<
         styleSettings={resume.styleSettings}
         templateId={resume.templateId}
         title={resume.title}
+        showShare
       />
     </main>
   );
 }
-

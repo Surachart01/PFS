@@ -1,1290 +1,555 @@
 "use client";
 
 import {
-  AlignCenter,
-  AlignLeft,
-  AlignRight,
-  Award,
-  BriefcaseBusiness,
-  ChevronDown,
-  ChevronUp,
-  Columns2,
-  Code2,
-  Copy,
-  Eye,
-  EyeOff,
-  FileText,
-  GraduationCap,
-  GripVertical,
-  Image as ImageIcon,
-  Layers,
-  Layout,
-  Link as LinkIcon,
-  Mail,
-  Palette,
-  Save,
-  Send,
-  Settings2,
-  Sparkles,
-  Trash2,
-  Type,
-  UserRound,
-  X
+  AlignCenter, AlignLeft, AlignRight, ArrowDown, ArrowUp, Check, ChevronDown, Copy,
+  Eye, EyeOff, FileDown, Image as ImageIcon, Layers3, LockKeyhole, Maximize2,
+  Minus, Plus, Redo2, RotateCcw, Save, Send, Settings2, Share2, Trash2,
+  Type, Undo2, UnlockKeyhole, X
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { Rnd } from "react-rnd";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties, DragEvent } from "react";
 
 import { ResumeRenderer } from "@/components/ResumeRenderer";
-import { TemplateGallery } from "@/components/TemplateGallery";
-import type { GridPlacement, PortfolioSection, PortfolioSectionSettings, SerializedPortfolio, TemplateId } from "@/lib/types";
+import { ResumeSection } from "@/components/resume/ResumeSection";
+import { applyDocumentTemplate, clamp, findFreeFrame, makeSection, normalizeFrame, preparePortfolio, snap } from "@/lib/resume-document";
+import { assetTypes, documentSize, fontOptions, primaryTemplates } from "@/lib/resume-options";
+import type { PortfolioSection, PortfolioSectionSettings, SerializedPortfolio, TemplateId } from "@/lib/types";
 
-type DragPayload = { source: "library"; type: PortfolioSection["type"] };
-type InspectorTab = "content" | "design";
-type CompleteSectionSettings = Required<PortfolioSectionSettings>;
+type Asset = { type: PortfolioSection["type"]; mode: "section" | "text" | "image" };
+type Status = "saved" | "dirty" | "saving" | "error";
+type InspectorTab = "content" | "design" | "layout";
+type MobilePanel = "assets" | "layers" | "properties" | null;
 
-const sectionIcons: Record<PortfolioSection["type"], LucideIcon> = {
-  profile: UserRound,
-  about: FileText,
-  education: GraduationCap,
-  skills: Code2,
-  projects: BriefcaseBusiness,
-  experience: BriefcaseBusiness,
-  certificates: Award,
-  contact: Mail,
-  custom: Sparkles
-};
-
-const colorSwatches = [
-  "#0f766e", "#2563eb", "#7c3aed", "#ea580c", "#be123c",
-  "#0891b2", "#ca8a04", "#475569", "#171a21", "#059669",
-  "#d97706", "#dc2626", "#4f46e5", "#0284c7"
+const assets: (Asset & { label: string; hint: string })[] = [
+  ...assetTypes.filter(item => item.type !== "custom").map(item => ({ type: item.type, mode: "section" as const, label: item.title, hint: item.hint })),
+  { type: "custom", mode: "text", label: "ข้อความอิสระ", hint: "วางข้อความได้ทุกตำแหน่ง" },
+  { type: "custom", mode: "image", label: "รูปภาพ", hint: "เพิ่มภาพประกอบ" }
 ];
 
-const fontFamilies = [
-  { label: "Inter (Modern Clean)", value: "Inter" },
-  { label: "Prompt (Thai Modern)", value: "Prompt" },
-  { label: "Kanit (Thai Sleek)", value: "Kanit" },
-  { label: "Playfair Display (Serif Luxury)", value: "Playfair Display" },
-  { label: "Fira Code (Tech Mono)", value: "Fira Code" },
-  { label: "Outfit (Creative Geometric)", value: "Outfit" }
-];
+const colors = ["#0f766e", "#2563eb", "#be123c", "#ca8a04", "#26313c", "#ffffff"];
 
-const bgThemes = [
-  { label: "Default Light", value: "default" },
-  { label: "Dark Slate Mode", value: "dark-slate" },
-  { label: "Glassmorphism", value: "glassmorphism" },
-  { label: "Mesh Gradient", value: "mesh-gradient" },
-  { label: "Sunset Glow", value: "sunset" },
-  { label: "Nordic Clean", value: "nordic" }
-];
-
-type BlockTemplate = {
-  type: PortfolioSection["type"];
-  title: string;
-  description: string;
-  category: "student" | "content";
-  icon: LucideIcon;
-  accentColor: string;
-  backgroundColor: string;
-  columns?: 1 | 2;
-  body?: string;
-  items?: string[];
-};
-
-const blockTemplates: BlockTemplate[] = [
-  {
-    type: "profile",
-    title: "ข้อมูลพื้นฐาน",
-    description: "ชื่อ สาขา ชั้นปี และอีเมล",
-    category: "student",
-    icon: UserRound,
-    accentColor: "#0f766e",
-    backgroundColor: "#ecfdf5",
-    columns: 2,
-    body: "ชื่อ-นามสกุล\nComputer Engineering | Year 4\nstudent@kmitl.ac.th"
-  },
-  {
-    type: "education",
-    title: "การศึกษา",
-    description: "มหาวิทยาลัย หลักสูตร และปีการศึกษา",
-    category: "student",
-    icon: GraduationCap,
-    accentColor: "#7c3aed",
-    backgroundColor: "#f5f3ff",
-    body: "B.Eng. Computer Engineering\nเพิ่มชื่อมหาวิทยาลัยและปีการศึกษา"
-  },
-  {
-    type: "contact",
-    title: "ช่องทางติดต่อ",
-    description: "อีเมล GitHub LinkedIn หรือเบอร์โทร",
-    category: "student",
-    icon: Mail,
-    accentColor: "#475569",
-    backgroundColor: "#f8fafc",
-    columns: 2,
-    body: "Email: student@kmitl.ac.th\nGitHub: github.com/username\nLinkedIn: linkedin.com/in/username"
-  },
-  {
-    type: "about",
-    title: "แนะนำตัว",
-    description: "เล่าเป้าหมาย ความสนใจ และตัวตน",
-    category: "content",
-    icon: FileText,
-    accentColor: "#2563eb",
-    backgroundColor: "#eff6ff",
-    body: "เขียนแนะนำตัว ความสนใจด้านวิศวกรรมคอมพิวเตอร์ และเป้าหมายในการทำงานของคุณ"
-  },
-  {
-    type: "skills",
-    title: "ทักษะ",
-    description: "ภาษา เครื่องมือ และเทคโนโลยี",
-    category: "content",
-    icon: Code2,
-    accentColor: "#0891b2",
-    backgroundColor: "#ecfeff",
-    columns: 2,
-    items: ["Next.js", "MongoDB", "Node.js", "TypeScript"]
-  },
-  {
-    type: "projects",
-    title: "โปรเจกต์",
-    description: "ผลงานเด่นพร้อมรายละเอียดสั้น ๆ",
-    category: "content",
-    icon: BriefcaseBusiness,
-    accentColor: "#ea580c",
-    backgroundColor: "#fff7ed",
-    items: ["Smart Attendance System - ระบบเช็กชื่อด้วย QR Code"]
-  },
-  {
-    type: "experience",
-    title: "ประสบการณ์",
-    description: "ฝึกงาน กิจกรรม หรือการแข่งขัน",
-    category: "content",
-    icon: BriefcaseBusiness,
-    accentColor: "#be123c",
-    backgroundColor: "#fff1f2",
-    items: ["Internship / Competition / Activity - อธิบายบทบาทและผลลัพธ์"]
-  },
-  {
-    type: "certificates",
-    title: "Certificate",
-    description: "ใบรับรองหรือคอร์สที่เรียนจบ",
-    category: "content",
-    icon: Award,
-    accentColor: "#ca8a04",
-    backgroundColor: "#fefce8",
-    items: ["Certificate name - Organization"]
-  },
-  {
-    type: "custom",
-    title: "ข้อความอิสระ",
-    description: "บล็อกว่างสำหรับเนื้อหาอื่น ๆ",
-    category: "content",
-    icon: Type,
-    accentColor: "#171a21",
-    backgroundColor: "#f4f6f8",
-    body: "เพิ่มเนื้อหาที่ต้องการแสดงใน Resume"
-  }
-];
-
-function reorderSections(sections: PortfolioSection[]) {
-  return sections.map((section, index) => ({ ...section, order: index + 1 }));
-}
-
-function defaultSettingsForType(type: PortfolioSection["type"]): CompleteSectionSettings {
-  return {
-    showTitle: true,
-    alignment: "left",
-    padding: "comfortable",
-    radius: "soft",
-    shadow: "soft",
-    width: "full",
-    imagePosition: "left",
-    itemStyle: type === "skills" ? "chips" : "cards",
-    borderStyle: "accent-left",
-    cardVariant: "solid",
-    column: ["skills", "certificates"].includes(type) ? "right" : "left"
-  };
-}
-
-function getSectionSettings(section: PortfolioSection): CompleteSectionSettings {
-  return {
-    ...defaultSettingsForType(section.type),
-    ...section.settings,
-    showTitle: section.settings?.showTitle !== false
-  };
-}
-
-function templateByType(type: PortfolioSection["type"]) {
-  return blockTemplates.find((template) => template.type === type) || blockTemplates[blockTemplates.length - 1];
-}
-
-function templateToSection(template: BlockTemplate, order: number, gridPlacement?: GridPlacement): PortfolioSection {
-  return {
-    id: crypto.randomUUID(),
-    type: template.type,
-    title: template.title,
-    visible: true,
-    order,
-    columns: template.columns || 1,
-    accentColor: template.accentColor,
-    backgroundColor: template.backgroundColor,
-    settings: defaultSettingsForType(template.type),
-    gridPlacement: gridPlacement || {
-      colStart: 1,
-      colEnd: 13,
-      rowStart: order * 2 - 1,
-      rowEnd: order * 2 + 1
-    },
-    content: {
-      body: template.body || "",
-      items: template.items ? [...template.items] : []
-    }
-  };
-}
-
-function renderSectionItems(items: string[], itemStyle: string, accent: string) {
-  if (items.length === 0) return null;
-
-  if (itemStyle === "bars") {
-    return (
-      <div className="document-item-bars">
-        {items.map((item, i) => {
-          const percent = 80 + ((i * 7) % 20);
-          return (
-            <div className="item-bar-row" key={item}>
-              <div className="item-bar-label">
-                <span>{item}</span>
-                <small>{percent}%</small>
-              </div>
-              <div className="item-bar-track">
-                <div className="item-bar-fill" style={{ width: `${percent}%`, backgroundColor: accent }} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
-  if (itemStyle === "timeline") {
-    return (
-      <div className="document-item-timeline">
-        {items.map((item) => (
-          <div className="timeline-node" key={item}>
-            <div className="timeline-dot" style={{ backgroundColor: accent }} />
-            <div className="timeline-content">{item}</div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (itemStyle === "pills") {
-    return (
-      <div className="document-mini-items items-pills-wrap">
-        {items.map((item) => (
-          <span className="pill-item" key={item} style={{ borderColor: `color-mix(in srgb, ${accent} 40%, transparent)` }}>
-            ✦ {item}
-          </span>
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className="document-mini-items">
-      {items.map((item) => (
-        <span key={item}>{item}</span>
-      ))}
-    </div>
-  );
+function isTypingTarget(target: EventTarget | null) {
+  const element = target as HTMLElement | null;
+  return Boolean(element?.closest("input, textarea, select, [contenteditable='true']"));
 }
 
 export function StudentEditor({ initialPortfolio }: { initialPortfolio: SerializedPortfolio }) {
-  const router = useRouter();
-  const [portfolio, setPortfolio] = useState(initialPortfolio);
-  const [dragPayload, setDragPayload] = useState<DragPayload | null>(null);
-  const [documentDropActive, setDocumentDropActive] = useState(false);
-  const [selectedId, setSelectedId] = useState(initialPortfolio.sections[0]?.id || null);
-  const [inspectorTab, setInspectorTab] = useState<InspectorTab>("content");
+  const [portfolio, setPortfolio] = useState(() => preparePortfolio(initialPortfolio));
+  const portfolioRef = useRef(portfolio);
+  const pastRef = useRef<SerializedPortfolio[]>([]);
+  const futureRef = useRef<SerializedPortfolio[]>([]);
+  const lastGroupRef = useRef<{ key: string; time: number } | null>(null);
+  const revisionRef = useRef(0);
+  const savedRevisionRef = useRef(0);
+  const savePromiseRef = useRef<Promise<boolean> | null>(null);
+  const [revision, setRevision] = useState(0);
+  const [historyTick, setHistoryTick] = useState(0);
+  const [status, setStatus] = useState<Status>("saved");
+  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [showTemplateGallery, setShowTemplateGallery] = useState(false);
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(portfolio.sections[0]?.id || null);
+  const [inspectorTab, setInspectorTab] = useState<InspectorTab>("content");
+  const [leftTab, setLeftTab] = useState<"assets" | "layers">("assets");
+  const [mobilePanel, setMobilePanel] = useState<MobilePanel>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [applyTheme, setApplyTheme] = useState(false);
+  const [preview, setPreview] = useState(false);
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const [zoom, setZoom] = useState(1);
+  const [fit, setFit] = useState(true);
+  const [guides, setGuides] = useState<{ x?: number; y?: number }>({});
+  const [overflowIds, setOverflowIds] = useState<Set<string>>(new Set());
+  const stageRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
-  const sortedSections = useMemo(() => {
-    const list = [...portfolio.sections].sort((a, b) => a.order - b.order);
-    const profileIdx = list.findIndex((s) => s.type === "profile");
-    if (profileIdx > 0) {
-      const [prof] = list.splice(profileIdx, 1);
-      list.unshift(prof);
+  const selected = portfolio.sections.find(section => section.id === selectedId) || null;
+
+  const markChanged = useCallback((next: SerializedPortfolio, group?: string) => {
+    const previous = portfolioRef.current;
+    if (next === previous) return;
+    const now = Date.now();
+    if (!group || lastGroupRef.current?.key !== group || now - lastGroupRef.current.time > 800) {
+      pastRef.current = [...pastRef.current.slice(-49), previous];
     }
-    return list;
-  }, [portfolio.sections]);
+    lastGroupRef.current = group ? { key: group, time: now } : null;
+    futureRef.current = [];
+    portfolioRef.current = next;
+    setPortfolio(next);
+    revisionRef.current += 1;
+    setRevision(revisionRef.current);
+    setStatus("dirty");
+    setHistoryTick(value => value + 1);
+  }, []);
 
-  /**
-   * ฟังก์ชัน 5.1.1: เลื่อนตำแหน่งการ์ดขึ้นหรือลง (Move Section Up/Down)
-   * หน้าที่: สลับลำดับการแสดงผลของการ์ดในคอลัมน์ โดย Profile จะถูกล็อกไว้ด้านบนเสมอ
-   */
-  function moveSection(index: number, direction: "up" | "down") {
-    if (index === 0 || sortedSections[index]?.type === "profile") return;
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex <= 0 || targetIndex >= sortedSections.length) return;
+  const updateSection = useCallback((id: string, update: (section: PortfolioSection) => PortfolioSection, group?: string) => {
+    const current = portfolioRef.current;
+    markChanged({ ...current, sections: current.sections.map(section => section.id === id ? update(section) : section) }, group);
+  }, [markChanged]);
 
-    const newSections = [...sortedSections];
-    const [moved] = newSections.splice(index, 1);
-    newSections.splice(targetIndex, 0, moved);
-    setSections(newSections, moved.id);
-    setMessage(`ย้าย ${moved.title} เรียบร้อยแล้ว`);
+  function updateSettings(id: string, patch: Partial<PortfolioSectionSettings>, group?: string) {
+    updateSection(id, section => ({ ...section, settings: { ...section.settings, ...patch } }), group);
   }
 
-  function handleSidebarDragStart(e: DragEvent, index: number) {
-    if (index === 0 || sortedSections[index]?.type === "profile") {
-      e.preventDefault();
-      return;
-    }
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", String(index));
-    setDraggedIndex(index);
+  function updateFrame(id: string, patch: Partial<ReturnType<typeof normalizeFrame>>) {
+    updateSection(id, section => ({ ...section, frame: normalizeFrame({ ...section, frame: { ...normalizeFrame(section), ...patch } }) }));
   }
 
-  function handleSidebarDrop(e: DragEvent, targetIndex: number) {
-    e.preventDefault();
-    const sourceRaw = e.dataTransfer.getData("text/plain");
-    const sourceIndex = sourceRaw !== "" ? Number(sourceRaw) : draggedIndex;
-    setDraggedIndex(null);
-    if (
-      sourceIndex === null ||
-      sourceIndex === undefined ||
-      isNaN(sourceIndex) ||
-      sourceIndex === 0 ||
-      sourceIndex === targetIndex
-    ) {
-      return;
-    }
-
-    const effectiveTargetIndex = Math.max(1, targetIndex);
-    const targetSec = sortedSections[effectiveTargetIndex];
-    const targetCol = targetSec?.settings?.column || (["skills", "certificates"].includes(targetSec?.type || "") ? "right" : "left");
-
-    const moved = sortedSections[sourceIndex];
-    if (!moved) return;
-
-    const updatedMoved = {
-      ...moved,
-      settings: {
-        ...getSectionSettings(moved),
-        column: targetCol
-      }
-    };
-
-    const newSections = [...sortedSections];
-    newSections.splice(sourceIndex, 1);
-    newSections.splice(effectiveTargetIndex, 0, updatedMoved);
-    setSections(newSections, updatedMoved.id);
-    setMessage(`ย้าย ${moved.title} ไปคอลัมน์${targetCol === "left" ? "ซ้าย" : "ขวา"} เรียบร้อยแล้ว`);
-  }
-  const selectedSection = sortedSections.find((section) => section.id === selectedId) || null;
-  const selectedTemplate = selectedSection ? templateByType(selectedSection.type) : null;
-  const selectedItemsText = (selectedSection?.content.items || []).join("\n");
-  const selectedSettings = selectedSection ? getSectionSettings(selectedSection) : null;
-  const studentBlocks = blockTemplates.filter((template) => template.category === "student");
-  const contentBlocks = blockTemplates.filter((template) => template.category === "content");
-
-  const maxGridRow = useMemo(() => {
-    return sortedSections.reduce((max, s) => Math.max(max, s.gridPlacement?.rowEnd || 2), 2);
-  }, [sortedSections]);
-
-  function setSections(sections: PortfolioSection[], nextSelectedId?: string | null) {
-    setPortfolio((current) => ({ ...current, sections: reorderSections(sections) }));
-    if (nextSelectedId !== undefined) setSelectedId(nextSelectedId);
-  }
-
-  function updateSection(id: string, patch: Partial<PortfolioSection>) {
-    setPortfolio((current) => ({
-      ...current,
-      sections: current.sections.map((section) => (section.id === id ? { ...section, ...patch } : section))
-    }));
-  }
-
-  function updateSectionSettings(id: string, patch: Partial<CompleteSectionSettings>) {
-    setPortfolio((current) => ({
-      ...current,
-      sections: current.sections.map((section) =>
-        section.id === id
-          ? {
-              ...section,
-              settings: {
-                ...getSectionSettings(section),
-                ...patch
-              }
-            }
-          : section
-      )
-    }));
-  }
-
-  function updateGridPlacement(id: string, patch: Partial<GridPlacement>) {
-    setPortfolio((current) => ({
-      ...current,
-      sections: current.sections.map((section) =>
-        section.id === id
-          ? {
-              ...section,
-              gridPlacement: {
-                colStart: section.gridPlacement?.colStart || 1,
-                colEnd: section.gridPlacement?.colEnd || 13,
-                rowStart: section.gridPlacement?.rowStart || 1,
-                rowEnd: section.gridPlacement?.rowEnd || 3,
-                ...patch
-              }
-            }
-          : section
-      )
-    }));
-  }
-
-  function updateContent(id: string, body: string, itemsText: string) {
-    setPortfolio((current) => ({
-      ...current,
-      sections: current.sections.map((section) =>
-        section.id === id
-          ? {
-              ...section,
-              content: {
-                ...section.content,
-                body,
-                items: itemsText.split("\n")
-              }
-            }
-          : section
-      )
-    }));
-  }
-
-  function updateSectionContent(id: string, patch: Partial<PortfolioSection["content"]>) {
-    setPortfolio((current) => ({
-      ...current,
-      sections: current.sections.map((section) =>
-        section.id === id
-          ? {
-              ...section,
-              content: {
-                ...section.content,
-                ...patch
-              }
-            }
-          : section
-      )
-    }));
-  }
-
-  function uploadImage(file: File, sectionId: string) {
-    if (!file.type.startsWith("image/")) {
-      setMessage("กรุณาเลือกไฟล์รูปภาพเท่านั้น");
-      return;
-    }
-    if (file.size > 900 * 1024) {
-      setMessage("รูปภาพใหญ่เกินไป กรุณาใช้ไฟล์ไม่เกิน 900KB");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const imageUrl = typeof reader.result === "string" ? reader.result : "";
-      updateSectionContent(sectionId, { imageUrl });
-      setMessage("เพิ่มรูปภาพใน element แล้ว");
-    };
-    reader.onerror = () => setMessage("อ่านไฟล์รูปภาพไม่สำเร็จ");
-    reader.readAsDataURL(file);
-  }
-
-  function startLibraryDrag(event: DragEvent<HTMLButtonElement>, type: PortfolioSection["type"]) {
-    const payload: DragPayload = { source: "library", type };
-    event.dataTransfer.effectAllowed = "copy";
-    event.dataTransfer.setData("application/x-pfs-block", JSON.stringify(payload));
-    setDragPayload(payload);
-  }
-
-  function readPayload(event: DragEvent) {
-    if (dragPayload) return dragPayload;
-    const raw = event.dataTransfer.getData("application/x-pfs-block");
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw) as DragPayload;
-    } catch {
-      return null;
-    }
-  }
-
-  function dropOnDocument(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault();
-    setDocumentDropActive(false);
-    const payload = readPayload(event);
-    setDragPayload(null);
-    if (!payload) return;
-
-    const template = templateByType(payload.type);
-    const section = templateToSection(template, sortedSections.length + 1, {
-      colStart: 1,
-      colEnd: 13,
-      rowStart: maxGridRow,
-      rowEnd: maxGridRow + 2
-    });
-    setSections([...sortedSections, section], section.id);
-    setMessage(`เพิ่ม ${template.title} ลงบน document แล้ว`);
-  }
-
-  /**
-   * ฟังก์ชัน 5.1.2: เพิ่มบล็อกหมวดหมู่ใหม่ลงบนหน้าจอ (Add Block to Canvas)
-   * หน้าที่: สร้างการ์ดใหม่ตามประเภทที่เลือก (เช่น ทักษะ, โปรเจกต์) แล้ววางต่อท้ายตารางบน Canvas
-   */
-  function addBlock(type: PortfolioSection["type"]) {
-    const template = templateByType(type);
-    const section = templateToSection(template, sortedSections.length + 1, {
-      colStart: 1,
-      colEnd: 13,
-      rowStart: maxGridRow,
-      rowEnd: maxGridRow + 2
-    });
-    setSections([...sortedSections, section], section.id);
-    setMessage(`เพิ่ม ${template.title} ลงบน document แล้ว`);
-  }
-
-  /**
-   * ฟังก์ชัน 5.1.3: ลบการ์ดที่ไม่ต้องการออกจากเรซูเม่ (Remove Section)
-   * หน้าที่: นำการ์ดออกจากรายการและปรับการเลือกการ์ดถัดไปอัตโนมัติ
-   */
-  function removeSection(id: string, title?: string) {
-    const nextSections = sortedSections.filter((section) => section.id !== id);
-    const currentIndex = sortedSections.findIndex((section) => section.id === id);
-    const nextSelected = selectedId === id ? nextSections[currentIndex]?.id || nextSections[currentIndex - 1]?.id || null : selectedId;
-    setSections(nextSections, nextSelected);
-    setMessage(`ลบ ${title || "element"} เรียบร้อยแล้ว`);
+  function addAsset(asset: Asset, point?: { x: number; y: number }) {
+    const current = portfolioRef.current;
+    const width = asset.mode === "image" ? 240 : asset.mode === "text" ? 310 : asset.type === "profile" ? 430 : 320;
+    const height = asset.mode === "image" ? 220 : asset.mode === "text" ? 130 : 170;
+    const frame = point
+      ? { x: clamp(snap(point.x, snapEnabled), 0, documentSize.width - width), y: clamp(snap(point.y, snapEnabled), 0, documentSize.height - height), width, height, zIndex: Math.max(0, ...current.sections.map(item => normalizeFrame(item).zIndex)) + 1, locked: false }
+      : findFreeFrame(current.sections, width, height);
+    if (!frame) { setMessage("กระดาษเต็มแล้ว กรุณาย้ายหรือย่อบล็อกเดิมก่อน"); return; }
+    const section = makeSection(asset.type, frame, asset.mode);
+    markChanged({ ...current, sections: [...current.sections, section] });
+    setSelectedId(section.id);
+    setLeftTab("layers");
+    setMobilePanel(null);
   }
 
   function duplicateSection(section: PortfolioSection) {
-    const gp = section.gridPlacement;
-    const copy: PortfolioSection = {
+    const current = portfolioRef.current;
+    const frame = normalizeFrame(section);
+    const highest = Math.max(...current.sections.map(item => normalizeFrame(item).zIndex), 0);
+    const duplicate: PortfolioSection = {
       ...section,
-      id: crypto.randomUUID(),
-      title: `${section.title} Copy`,
-      settings: { ...getSectionSettings(section) },
-      gridPlacement: {
-        colStart: gp?.colStart || 1,
-        colEnd: gp?.colEnd || 13,
-        rowStart: maxGridRow,
-        rowEnd: maxGridRow + (gp ? gp.rowEnd - gp.rowStart : 2)
-      },
-      content: {
-        ...section.content,
-        items: section.content.items ? [...section.content.items] : []
+      id: crypto.randomUUID(), title: `${section.title} สำเนา`, order: current.sections.length + 1,
+      frame: { ...frame, x: clamp(frame.x + 24, 0, documentSize.width - frame.width), y: clamp(frame.y + 24, 0, documentSize.height - frame.height), zIndex: highest + 1, locked: false },
+      settings: { ...section.settings }, content: { ...section.content, items: [...(section.content.items || [])] }
+    };
+    markChanged({ ...current, sections: [...current.sections, duplicate] });
+    setSelectedId(duplicate.id);
+  }
+
+  function removeSection(section: PortfolioSection) {
+    if (section.frame?.locked) return;
+    const current = portfolioRef.current;
+    markChanged({ ...current, sections: current.sections.filter(item => item.id !== section.id) });
+    setOverflowIds(old => { const next = new Set(old); next.delete(section.id); return next; });
+    setSelectedId(current.sections.find(item => item.id !== section.id)?.id || null);
+  }
+
+  function moveLayer(section: PortfolioSection, direction: 1 | -1) {
+    const sorted = [...portfolioRef.current.sections].sort((a, b) => normalizeFrame(a).zIndex - normalizeFrame(b).zIndex);
+    const index = sorted.findIndex(item => item.id === section.id);
+    const nextIndex = clamp(index + direction, 0, sorted.length - 1);
+    if (index === nextIndex) return;
+    [sorted[index], sorted[nextIndex]] = [sorted[nextIndex], sorted[index]];
+    const zIndex = new Map(sorted.map((item, position) => [item.id, position + 1]));
+    markChanged({ ...portfolioRef.current, sections: portfolioRef.current.sections.map(item => ({ ...item, frame: { ...normalizeFrame(item), zIndex: zIndex.get(item.id)! } })) });
+  }
+
+  function undo() {
+    const previous = pastRef.current.pop();
+    if (!previous) return;
+    futureRef.current.push(portfolioRef.current);
+    portfolioRef.current = previous;
+    setPortfolio(previous);
+    revisionRef.current += 1;
+    setRevision(revisionRef.current);
+    setStatus("dirty");
+    setHistoryTick(value => value + 1);
+    lastGroupRef.current = null;
+  }
+
+  function redo() {
+    const next = futureRef.current.pop();
+    if (!next) return;
+    pastRef.current.push(portfolioRef.current);
+    portfolioRef.current = next;
+    setPortfolio(next);
+    revisionRef.current += 1;
+    setRevision(revisionRef.current);
+    setStatus("dirty");
+    setHistoryTick(value => value + 1);
+    lastGroupRef.current = null;
+  }
+
+  async function save(): Promise<boolean> {
+    if (savePromiseRef.current) return savePromiseRef.current;
+    if (savedRevisionRef.current >= revisionRef.current) return true;
+    const operation = (async () => {
+      while (savedRevisionRef.current < revisionRef.current) {
+        const targetRevision = revisionRef.current;
+        const snapshot = portfolioRef.current;
+        setStatus("saving");
+        try {
+          const response = await fetch("/api/portfolio/me", {
+            method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(snapshot)
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            setStatus("error");
+            setMessage(data.message || "บันทึกไม่สำเร็จ กดบันทึกเพื่อลองอีกครั้ง");
+            return false;
+          }
+          savedRevisionRef.current = targetRevision;
+          if (targetRevision === revisionRef.current) {
+            const merged = { ...portfolioRef.current, slug: data.portfolio.slug, updatedAt: data.portfolio.updatedAt };
+            portfolioRef.current = merged;
+            setPortfolio(merged);
+            setStatus("saved");
+            setMessage("");
+          }
+        } catch {
+          setStatus("error");
+          setMessage("เชื่อมต่อไม่ได้ ข้อมูลยังอยู่ในหน้านี้ กดบันทึกเพื่อลองอีกครั้ง");
+          return false;
+        }
+      }
+      return true;
+    })();
+    savePromiseRef.current = operation;
+    try { return await operation; } finally { savePromiseRef.current = null; }
+  }
+
+  useEffect(() => {
+    if (savedRevisionRef.current >= revisionRef.current || busy) return;
+    const timer = window.setTimeout(() => void save(), 1100);
+    return () => window.clearTimeout(timer);
+  }, [revision, busy]);
+
+  useEffect(() => {
+    const warn = (event: BeforeUnloadEvent) => {
+      if (savedRevisionRef.current < revisionRef.current) { event.preventDefault(); event.returnValue = ""; }
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, []);
+
+  async function publish() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      if (!(await save())) return;
+      const response = await fetch("/api/portfolio/me/publish", { method: "POST" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) { setMessage(data.message || "เผยแพร่ไม่สำเร็จ"); return; }
+      const next = { ...portfolioRef.current, status: data.portfolio.status, publishedAt: data.portfolio.publishedAt };
+      portfolioRef.current = next;
+      setPortfolio(next);
+      setMessage("เผยแพร่ Resume แล้ว");
+    } catch { setMessage("เผยแพร่ไม่สำเร็จ กรุณาลองอีกครั้ง"); }
+    finally { setBusy(false); }
+  }
+
+  async function unpublish() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const response = await fetch("/api/portfolio/me/unpublish", { method: "POST" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) { setMessage(data.message || "ปิดเผยแพร่ไม่สำเร็จ"); return; }
+      const next = { ...portfolioRef.current, status: data.portfolio.status };
+      portfolioRef.current = next;
+      setPortfolio(next);
+      setMessage("ปิดเผยแพร่แล้ว งานที่กำลังแก้ยังอยู่");
+    } catch { setMessage("ปิดเผยแพร่ไม่สำเร็จ กรุณาลองอีกครั้ง"); }
+    finally { setBusy(false); }
+  }
+
+  function applyTemplate(id: TemplateId) {
+    const next = applyDocumentTemplate(portfolioRef.current, id, applyTheme);
+    if (!next) { setMessage("พื้นที่บนกระดาษไม่พอสำหรับเทมเพลตนี้ งานเดิมยังอยู่ครบ"); return; }
+    markChanged(next);
+    setShowTemplates(false);
+  }
+
+  async function uploadImage(file: File) {
+    if (!selected || !["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
+      setMessage("เลือกไฟล์ JPG, PNG, WebP หรือ GIF"); return;
+    }
+    if (file.size > 900 * 1024) { setMessage("รูปใหญ่เกิน 900 KB กรุณาใช้รูปที่เล็กลง"); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        updateSection(selected.id, section => ({ ...section, content: { ...section.content, imageUrl: reader.result as string } }));
       }
     };
-    setSections([...sortedSections, copy], copy.id);
-    setMessage(`คัดลอก ${section.title} เรียบร้อยแล้ว`);
+    reader.onerror = () => setMessage("อ่านไฟล์รูปไม่สำเร็จ");
+    reader.readAsDataURL(file);
   }
 
-  function handleTemplateSelect(templateId: TemplateId) {
-    applyTemplateClient(templateId);
-    setShowTemplateGallery(false);
-  }
+  const fitCanvas = useCallback(() => {
+    const width = stageRef.current?.clientWidth || 900;
+    setZoom(clamp((width - 72) / documentSize.width, 0.35, 1));
+  }, []);
 
-  /**
-   * ฟังก์ชัน 5.1.4: สลับเทมเพลตเรซูเม่ในคลิกเดียว (Apply Template Client)
-   * หน้าที่: ส่งรหัสเทมเพลตไปยังเซิร์ฟเวอร์เพื่อคำนวณตำแหน่งกริดใหม่โดยรักษาเนื้อหาเดิมของนักศึกษาไว้
-   */
-  async function applyTemplateClient(templateId: TemplateId) {
-    setSaving(true);
-    setMessage("");
-    try {
-      const response = await fetch("/api/portfolio/me", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...portfolio,
-          templateId,
-          applyTemplate: true
-        })
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setMessage(data.message || "ใช้ template ไม่สำเร็จ");
-        return;
+  useEffect(() => {
+    if (!fit || !stageRef.current) return;
+    fitCanvas();
+    const observer = new ResizeObserver(fitCanvas);
+    observer.observe(stageRef.current);
+    return () => observer.disconnect();
+  }, [fit, fitCanvas]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (isTypingTarget(event.target) || preview) return;
+      const command = event.metaKey || event.ctrlKey;
+      if (command && event.key.toLowerCase() === "z") {
+        event.preventDefault();
+        if (event.shiftKey) redo(); else undo();
+      } else if (command && event.key.toLowerCase() === "d" && selected) {
+        event.preventDefault(); duplicateSection(selected);
+      } else if ((event.key === "Delete" || event.key === "Backspace") && selected && !selected.frame?.locked) {
+        event.preventDefault(); removeSection(selected);
+      } else if (event.key.startsWith("Arrow") && selected && !selected.frame?.locked) {
+        event.preventDefault();
+        const frame = normalizeFrame(selected);
+        const delta = event.shiftKey ? 10 : 1;
+        updateFrame(selected.id, {
+          x: frame.x + (event.key === "ArrowRight" ? delta : event.key === "ArrowLeft" ? -delta : 0),
+          y: frame.y + (event.key === "ArrowDown" ? delta : event.key === "ArrowUp" ? -delta : 0)
+        });
       }
-      setPortfolio(data.portfolio);
-      setSelectedId(data.portfolio.sections[0]?.id || null);
-      setMessage(`เปลี่ยน template เป็น ${templateId} เรียบร้อยแล้ว`);
-      router.refresh();
-    } catch {
-      setMessage("ไม่สามารถเชื่อมต่อเพื่อเปลี่ยน template ได้");
-    } finally {
-      setSaving(false);
-    }
-  }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected, preview]);
 
-  /**
-   * ฟังก์ชัน 5.1.5: บันทึกข้อมูลแบบร่าง (Save Draft Client)
-   * หน้าที่: ส่งข้อมูลการแก้ไขและสไตล์ทั้งหมดไปบันทึกลงฐานข้อมูล MongoDB ผ่าน API PUT /api/portfolio/me
-   */
-  async function save(): Promise<boolean> {
-    setSaving(true);
-    setMessage("");
+  const reportOverflow = useCallback((id: string, overflowing: boolean) => {
+    setOverflowIds(old => {
+      if (old.has(id) === overflowing) return old;
+      const next = new Set(old);
+      if (overflowing) next.add(id); else next.delete(id);
+      return next;
+    });
+  }, []);
+
+  function dropAsset(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    const raw = event.dataTransfer.getData("application/x-resume-asset");
+    if (!raw || !sheetRef.current) return;
     try {
-      const response = await fetch("/api/portfolio/me", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(portfolio)
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setMessage(data.message || "บันทึกไม่สำเร็จ");
-        return false;
-      }
-      setPortfolio(data.portfolio);
-      setMessage("บันทึกเรียบร้อยแล้ว");
-      router.refresh();
-      return true;
-    } catch {
-      setMessage("ไม่สามารถเชื่อมต่อเพื่อบันทึกข้อมูลได้");
-      return false;
-    } finally {
-      setSaving(false);
-    }
+      const asset = JSON.parse(raw) as Asset;
+      if (!assets.some(item => item.type === asset.type && item.mode === asset.mode)) return;
+      const rect = sheetRef.current.getBoundingClientRect();
+      addAsset(asset, { x: (event.clientX - rect.left) / zoom, y: (event.clientY - rect.top) / zoom });
+    } catch { setMessage("วางบล็อกไม่สำเร็จ กรุณาลองอีกครั้ง"); }
   }
 
-  /**
-   * ฟังก์ชัน 5.1.6: เผยแพร่ผลงานสู่สาธารณะ (Publish Portfolio Client)
-   * หน้าที่: บันทึกข้อมูลล่าสุด แล้วส่งคำสั่งเปิดสถานะเป็น published ให้คนภายนอกเปิดดูผ่านลิงก์ได้ทันที
-   */
-  async function publish() {
-    const saved = await save();
-    if (!saved) return;
-    const response = await fetch("/api/portfolio/me/publish", { method: "POST" });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      setMessage(data.message || "เผยแพร่ไม่สำเร็จ");
-      return;
-    }
-    setPortfolio(data.portfolio);
-    setMessage("เผยแพร่ Resume เรียบร้อยแล้ว");
-    router.refresh();
+  function showAlignment(id: string, x: number, y: number) {
+    const section = portfolioRef.current.sections.find(item => item.id === id);
+    if (!section) return;
+    const frame = normalizeFrame(section);
+    const xPoints = [documentSize.width / 2, ...portfolioRef.current.sections.filter(item => item.id !== id).flatMap(item => {
+      const other = normalizeFrame(item);
+      return [other.x, other.x + other.width / 2, other.x + other.width];
+    })];
+    const yPoints = [documentSize.height / 2, ...portfolioRef.current.sections.filter(item => item.id !== id).flatMap(item => {
+      const other = normalizeFrame(item);
+      return [other.y, other.y + other.height / 2, other.y + other.height];
+    })];
+    const gx = xPoints.find(point => [x, x + frame.width / 2, x + frame.width].some(edge => Math.abs(point - edge) < 5));
+    const gy = yPoints.find(point => [y, y + frame.height / 2, y + frame.height].some(edge => Math.abs(point - edge) < 5));
+    setGuides({ x: gx, y: gy });
   }
 
-  /**
-   * ฟังก์ชัน 5.1.7: ปิดการแสดงผลงานสาธารณะชั่วคราว (Unpublish Portfolio Client)
-   * หน้าที่: ปรับสถานะกลับเป็น draft เพื่อซ่อนผลงานไม่ให้คนภายนอกเข้าดู
-   */
-  async function unpublish() {
-    const response = await fetch("/api/portfolio/me/unpublish", { method: "POST" });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      setMessage(data.message || "ปิดเผยแพร่ไม่สำเร็จ");
-      return;
-    }
-    setPortfolio(data.portfolio);
-    setMessage("ปิดเผยแพร่แล้ว");
-    router.refresh();
+  async function printPdf() {
+    if (overflowIds.size) { setMessage("มีเนื้อหาล้นบล็อก กรุณาขยายบล็อกก่อนพิมพ์ PDF"); return; }
+    setPreview(true);
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    await document.fonts.ready;
+    await Promise.all(Array.from(document.querySelectorAll(".rs-preview-overlay img")).map(image => {
+      const img = image as HTMLImageElement;
+      return img.complete ? Promise.resolve() : new Promise<void>(resolve => { img.onload = () => resolve(); img.onerror = () => resolve(); });
+    }));
+    window.print();
   }
 
-  function renderInspectorTab(tab: InspectorTab, label: string, Icon: LucideIcon) {
-    return (
-      <button className={inspectorTab === tab ? "active" : ""} onClick={() => setInspectorTab(tab)} type="button">
-        <Icon size={15} />
-        {label}
-      </button>
-    );
-  }
-
-  function renderSegmentButton(active: boolean, onClick: () => void, label: string, Icon?: LucideIcon) {
-    const IconComponent = Icon;
-    return (
-      <button className={active ? "active" : ""} onClick={onClick} type="button">
-        {IconComponent ? <IconComponent size={15} /> : null}
-        {label}
-      </button>
-    );
-  }
-
-  function renderLibraryGroup(title: string, blocks: BlockTemplate[]) {
-    return (
-      <div className="library-group">
-        <h3>{title}</h3>
-        <div className="block-library">
-          {blocks.map((template) => {
-            const Icon = template.icon;
-            return (
-              <button
-                className="library-card"
-                draggable
-                key={template.type}
-                onClick={() => addBlock(template.type)}
-                onDragEnd={() => {
-                  setDragPayload(null);
-                  setDocumentDropActive(false);
-                }}
-                onDragStart={(event) => startLibraryDrag(event, template.type)}
-                type="button"
-              >
-                <Icon size={20} />
-                <span>
-                  <strong>{template.title}</strong>
-                  <small>{template.description}</small>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  function renderElement(section: PortfolioSection) {
-    const template = templateByType(section.type);
-    const Icon = template.icon;
-    const settings = getSectionSettings(section);
-    const items = section.content.items || [];
-    const accentColor = section.accentColor || template.accentColor;
-    const backgroundColor = section.backgroundColor || template.backgroundColor;
-    const hasMedia = Boolean(section.content.imageUrl);
-    const gp = section.gridPlacement;
-    const isSelected = selectedId === section.id;
-
-    const elementStyle = {
-      "--block-accent": accentColor,
-      "--block-bg": backgroundColor,
-      gridColumn: gp ? `${gp.colStart} / ${gp.colEnd}` : "1 / 13",
-      gridRow: gp ? `${gp.rowStart} / ${gp.rowEnd}` : "auto"
-    } as CSSProperties;
-
-    return (
-      <article
-        className={`grid-document-element editor-element ${isSelected ? "selected" : ""} ${!section.visible ? "muted-block" : ""} columns-${section.columns || 1} align-${settings.alignment} pad-${settings.padding} radius-${settings.radius} shadow-${settings.shadow} image-${settings.imagePosition} items-${settings.itemStyle} border-${settings.borderStyle} variant-${settings.cardVariant}`}
-        key={section.id}
-        onClick={() => setSelectedId(section.id)}
-        style={elementStyle}
-      >
-        <div className="element-frame-label">
-          <div className="label-title-group">
-            <Icon size={13} />
-            <span>{section.title}</span>
-            {gp ? <small>{gp.colEnd - gp.colStart} col × {gp.rowEnd - gp.rowStart} row</small> : null}
-          </div>
-        </div>
-
-        {isSelected ? (
-          <div className="card-floating-toolbar">
-            <button
-              className="floating-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                duplicateSection(section);
-              }}
-              title="คัดลอก Element"
-              type="button"
-            >
-              <Copy size={14} />
-              คัดลอก
-            </button>
-            <button
-              className="floating-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                updateSection(section.id, { visible: !section.visible });
-              }}
-              title={section.visible ? "ซ่อน Element" : "แสดง Element"}
-              type="button"
-            >
-              {section.visible ? <EyeOff size={14} /> : <Eye size={14} />}
-              {section.visible ? "ซ่อน" : "แสดง"}
-            </button>
-          </div>
-        ) : null}
-
-        <div className="document-element-inner">
-          <div className={`document-element-layout ${hasMedia ? "has-media" : "no-media"}`}>
-            {section.content.imageUrl ? (
-              <div className="document-element-image">
-                <img alt={`${section.title} image`} src={section.content.imageUrl} />
-              </div>
-            ) : null}
-            <div className="document-element-copy">
-              {settings.showTitle ? <h2>{section.title}</h2> : null}
-              {section.content.body ? <div className="portfolio-body">{section.content.body}</div> : null}
-              {renderSectionItems(items, settings.itemStyle, accentColor)}
-              {!section.content.body && items.length === 0 ? <p className="muted">Empty element</p> : null}
-            </div>
-          </div>
-        </div>
-      </article>
-    );
-  }
-
-  const bgTheme = portfolio.styleSettings.backgroundTheme || "default";
+  const statusLabel = status === "saved" ? "บันทึกแล้ว" : status === "saving" ? "กำลังบันทึก" : status === "error" ? "บันทึกไม่สำเร็จ" : "ยังไม่บันทึก";
+  const sortedLayers = [...portfolio.sections].sort((a, b) => normalizeFrame(b).zIndex - normalizeFrame(a).zIndex);
 
   return (
-    <div className="grid">
-      <section className="panel builder-command-panel">
-        <div className="panel-body toolbar builder-command">
-          <div className="builder-command-copy">
-            <span className="eyebrow">Resume Studio Pro</span>
-            <h1>Grid Builder & Layout Studio</h1>
-            <p className="muted">{portfolio.title}</p>
-          </div>
-          <div className="btn-row builder-actions">
-            <button className="btn btn-sparkle" onClick={() => setShowTemplateGallery(!showTemplateGallery)} type="button">
-              <Sparkles size={18} />
-              {showTemplateGallery ? "ปิด Gallery" : "เลือก Template Gallery"}
-            </button>
-            {portfolio.status === "published" ? (
-              <a className="btn" href={`/r/${portfolio.slug}`} target="_blank">
-                <Eye size={18} />
-                ดู Resume
-              </a>
-            ) : null}
-            <button className="btn" disabled={saving} onClick={save} type="button">
-              <Save size={18} />
-              {saving ? "กำลังบันทึก..." : "บันทึก"}
-            </button>
-            <button className="btn btn-primary" onClick={publish} type="button">
-              <Send size={18} />
-              Publish
-            </button>
-            {portfolio.status === "published" ? (
-              <button className="btn btn-danger" onClick={unpublish} type="button">
-                ปิดเผยแพร่
-              </button>
-            ) : null}
-          </div>
+    <div className="rs-studio">
+      <div className="rs-topbar">
+        <div className="rs-title-group">
+          <strong>Resume Studio</strong>
+          <span className={`rs-save-state rs-save-${status}`} aria-live="polite">{status === "saved" && <Check size={13} />}{statusLabel}</span>
         </div>
-      </section>
+        <div className="rs-top-actions">
+          <button className="rs-icon-button" aria-label="ย้อนกลับ" title="ย้อนกลับ" disabled={!pastRef.current.length} onClick={undo} type="button"><Undo2 size={18} /></button>
+          <button className="rs-icon-button" aria-label="ทำซ้ำ" title="ทำซ้ำ" disabled={!futureRef.current.length} onClick={redo} type="button"><Redo2 size={18} /></button>
+          <span className="rs-toolbar-separator" />
+          <button className="rs-button" onClick={() => setShowTemplates(value => !value)} type="button"><Layers3 size={16} /> เทมเพลต</button>
+          <button className="rs-button" onClick={() => setPreview(true)} type="button"><Eye size={16} /> ดูตัวอย่าง</button>
+          <button className="rs-button" disabled={busy} onClick={() => void save()} type="button"><Save size={16} /> บันทึก</button>
+          <button className="rs-button" onClick={() => void printPdf()} type="button"><FileDown size={16} /> บันทึก PDF</button>
+          {portfolio.status === "published" ? (
+            <button className="rs-button rs-button-muted" disabled={busy} onClick={() => void unpublish()} type="button">ปิดเผยแพร่</button>
+          ) : (
+            <button className="rs-button rs-button-primary" disabled={busy} onClick={() => void publish()} type="button"><Send size={16} /> เผยแพร่</button>
+          )}
+        </div>
+      </div>
 
-      {message ? <div className="alert">{message}</div> : null}
+      {message && <div className="rs-message" role="status">{message}<button aria-label="ปิดข้อความ" onClick={() => setMessage("")} type="button"><X size={16} /></button></div>}
+      {overflowIds.size > 0 && <div className="rs-overflow-alert" role="status">มีเนื้อหาล้นใน {overflowIds.size} บล็อก <button onClick={() => { setSelectedId([...overflowIds][0]); setLeftTab("layers"); }} type="button">ไปที่บล็อก</button></div>}
 
-      {showTemplateGallery ? (
-        <section className="panel">
-          <div className="panel-body">
-            <TemplateGallery currentTemplate={portfolio.templateId} onSelect={handleTemplateSelect} />
+      {showTemplates && <div className="rs-template-strip">
+        <div className="rs-template-heading"><strong>เลือกรูปแบบ</strong><label><input checked={applyTheme} onChange={event => setApplyTheme(event.target.checked)} type="checkbox" /> เปลี่ยนสีหลักด้วย</label></div>
+        <div className="rs-template-list">{primaryTemplates.map(template => {
+          const thumbnail = applyDocumentTemplate({ ...portfolio, sections: portfolio.sections.slice(0, 6) }, template.id, false);
+          return <button className={`rs-template rs-template-${template.id}`} key={template.id} onClick={() => applyTemplate(template.id)} type="button">
+            <span className="rs-template-graphic">{thumbnail && <ResumeRenderer sections={thumbnail.sections} styleSettings={thumbnail.styleSettings} title={thumbnail.title} />}</span>
+            <strong>{template.name}</strong><small>{template.description}</small>
+          </button>;
+        })}</div>
+      </div>}
+
+      <div className="rs-mobile-tabs">
+        <button onClick={() => { setLeftTab("assets"); setMobilePanel("assets"); }} type="button">เพิ่มบล็อก</button>
+        <button onClick={() => { setLeftTab("layers"); setMobilePanel("layers"); }} type="button">เลเยอร์</button>
+        <button onClick={() => setMobilePanel("properties")} type="button">ปรับแต่ง</button>
+      </div>
+
+      <div className="rs-workspace">
+        <aside className={`rs-left rs-mobile-${mobilePanel === leftTab ? "open" : "closed"}`}>
+          <div className="rs-panel-tabs">
+            <button className={leftTab === "assets" ? "active" : ""} onClick={() => setLeftTab("assets")} type="button">เพิ่มบล็อก</button>
+            <button className={leftTab === "layers" ? "active" : ""} onClick={() => setLeftTab("layers")} type="button">เลเยอร์</button>
+            <button className="rs-mobile-close" aria-label="ปิดแผง" onClick={() => setMobilePanel(null)} type="button"><X size={17} /></button>
           </div>
-        </section>
-      ) : null}
-
-      <div className="editor-layout builder-layout figma-layout">
-        <aside className="panel builder-sidebar">
-          <div className="panel-body">
-            <div className="builder-sidebar-title">
-              <Layers size={20} />
-              <div>
-                <h2>Active Elements ({sortedSections.length})</h2>
-                <p className="muted">ลากสลับลำดับ หรือใช้ปุ่ม ▲ ▼</p>
-              </div>
-            </div>
-
-            {sortedSections.length > 0 ? (
-              <div className="active-elements-manager">
-                {sortedSections.map((section, index) => {
-                  const Icon = sectionIcons[section.type] || Sparkles;
-                  const isSelected = selectedId === section.id;
-                  const isDragging = draggedIndex === index;
-                  const isPinned = section.type === "profile" || index === 0;
-
-                  return (
-                    <div
-                      className={`active-element-row ${isSelected ? "selected" : ""} ${!section.visible ? "hidden-element" : ""} ${isDragging ? "dragging" : ""} ${isPinned ? "pinned-element-row" : ""}`}
-                      draggable={!isPinned}
-                      key={section.id}
-                      onClick={() => setSelectedId(section.id)}
-                      onDragEnd={() => setDraggedIndex(null)}
-                      onDragOver={(e) => {
-                        if (!isPinned) {
-                          e.preventDefault();
-                          e.dataTransfer.dropEffect = "move";
-                        }
-                      }}
-                      onDragStart={(e) => handleSidebarDragStart(e, index)}
-                      onDrop={(e) => !isPinned && handleSidebarDrop(e, index)}
-                    >
-                      <div className="active-element-name">
-                        {isPinned ? (
-                          <span className="pinned-badge" title="ส่วนนี้ถูกปักหมุดไว้ที่ด้านบนสุดของเรซูเม่">📌</span>
-                        ) : (
-                          <GripVertical className="drag-handle" size={14} style={{ color: "#94a3b8", cursor: "grab" }} />
-                        )}
-                        <Icon size={14} style={{ color: section.accentColor || "var(--accent)" }} />
-                        <span>{section.title}</span>
-                      </div>
-                      {!isPinned ? (
-                        <div className="active-element-reorder-actions">
-                          {(() => {
-                            const currentSide = section.settings?.column || (["skills", "certificates"].includes(section.type) ? "right" : "left");
-                            return (
-                              <button
-                                className="reorder-btn col-side-toggle-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const nextSide = currentSide === "left" ? "right" : "left";
-                                  updateSectionSettings(section.id, { column: nextSide });
-                                }}
-                                title={`คลิกเพื่อย้ายไปฝั่ง${currentSide === "left" ? "ขวา" : "ซ้าย"}`}
-                                type="button"
-                              >
-                                {currentSide === "left" ? "ซ้าย" : "ขวา"}
-                              </button>
-                            );
-                          })()}
-                          <button
-                            aria-label="ย้ายขึ้น"
-                            className="reorder-btn"
-                            disabled={index <= 1}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              moveSection(index, "up");
-                            }}
-                            title="ย้ายขึ้น"
-                            type="button"
-                          >
-                            <ChevronUp size={13} />
-                          </button>
-                          <button
-                            aria-label="ย้ายลง"
-                            className="reorder-btn"
-                            disabled={index === sortedSections.length - 1}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              moveSection(index, "down");
-                            }}
-                            title="ย้ายลง"
-                            type="button"
-                          >
-                            <ChevronDown size={13} />
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="pinned-label">ส่วนหัวหลัก</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : null}
-
-            <div className="inspector-divider" style={{ margin: "16px 0" }} />
-
-            <div className="builder-sidebar-title">
-              <Palette size={20} />
-              <div>
-                <h2>Assets</h2>
-                <p className="muted">ลากลง document หรือคลิกเพิ่ม</p>
-              </div>
-            </div>
-            {renderLibraryGroup("Student", studentBlocks)}
-            {renderLibraryGroup("Content", contentBlocks)}
-          </div>
+          {leftTab === "assets" ? <div className="rs-assets">
+            <p className="rs-panel-note">ลากลงบนกระดาษ หรือคลิกเพื่อเพิ่ม</p>
+            {assets.map(asset => (
+              <button
+                className="rs-asset" draggable key={`${asset.type}-${asset.mode}`}
+                onClick={() => addAsset(asset)}
+                onDragStart={event => { event.dataTransfer.effectAllowed = "copy"; event.dataTransfer.setData("application/x-resume-asset", JSON.stringify({ type: asset.type, mode: asset.mode })); }}
+                type="button"
+              >
+                <span className="rs-asset-icon">{asset.mode === "image" ? <ImageIcon size={18} /> : asset.mode === "text" ? <Type size={18} /> : <Plus size={18} />}</span>
+                <span><strong>{asset.label}</strong><small>{asset.hint}</small></span>
+              </button>
+            ))}
+          </div> : <div className="rs-layers">
+            {sortedLayers.map(section => <div className={`rs-layer ${selectedId === section.id ? "selected" : ""}`} key={section.id}>
+              <button className="rs-layer-name" onClick={() => { setSelectedId(section.id); setMobilePanel(null); }} type="button">
+                <Layers3 size={15} /><span>{section.title}</span>{overflowIds.has(section.id) && <b title="เนื้อหาล้น">!</b>}
+              </button>
+              <button className="rs-mini-icon" aria-label={section.visible ? "ซ่อน" : "แสดง"} title={section.visible ? "ซ่อน" : "แสดง"} onClick={() => updateSection(section.id, old => ({ ...old, visible: !old.visible }))} type="button">{section.visible ? <Eye size={14} /> : <EyeOff size={14} />}</button>
+              <button className="rs-mini-icon" aria-label={section.frame?.locked ? "ปลดล็อก" : "ล็อก"} title={section.frame?.locked ? "ปลดล็อก" : "ล็อก"} onClick={() => updateFrame(section.id, { locked: !section.frame?.locked })} type="button">{section.frame?.locked ? <LockKeyhole size={14} /> : <UnlockKeyhole size={14} />}</button>
+            </div>)}
+          </div>}
         </aside>
 
-        <section className="panel document-canvas-panel">
-          <div className="document-panel-body">
-            <div className="document-toolbar">
-              <div>
-                <h2>✨ Resume Canvas</h2>
-                <p className="muted">แสดงผลเรซูเม่จริงแบบเรียลไทม์ • คลิกส่วนใดบนเรซูเม่เพื่อเลือกและแก้ไขข้อมูลทางขวามือ</p>
-              </div>
+        <main className="rs-center">
+          <div className="rs-canvas-toolbar">
+            <span><strong>A4</strong> · 794 × 1123</span>
+            <div className="rs-canvas-tools">
+              <label className="rs-snap-label"><input checked={snapEnabled} onChange={event => setSnapEnabled(event.target.checked)} type="checkbox" /> จัดแนวกริด</label>
+              <button className="rs-icon-button" aria-label="ซูมออก" title="ซูมออก" onClick={() => { setFit(false); setZoom(value => clamp(Math.round((value - 0.25) * 4) / 4, 0.5, 1.5)); }} type="button"><Minus size={16} /></button>
+              <span className="rs-zoom-label">{Math.round(zoom * 100)}%</span>
+              <button className="rs-icon-button" aria-label="ซูมเข้า" title="ซูมเข้า" onClick={() => { setFit(false); setZoom(value => clamp(Math.round((value + 0.25) * 4) / 4, 0.5, 1.5)); }} type="button"><Plus size={16} /></button>
+              <button className="rs-icon-button" aria-label="พอดีหน้าจอ" title="พอดีหน้าจอ" onClick={() => { setFit(true); fitCanvas(); }} type="button"><Maximize2 size={16} /></button>
             </div>
-
-            <div
-              className={`document-stage ${documentDropActive ? "drop-active" : ""}`}
-              onDragLeave={() => setDocumentDropActive(false)}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDocumentDropActive(true);
-              }}
-              onDrop={dropOnDocument}
-            >
-              <div className="live-resume-editor-wrap">
-                <ResumeRenderer
-                  onSelectSection={(id) => setSelectedId(id)}
-                  sections={portfolio.sections}
-                  selectedSectionId={selectedId}
-                  styleSettings={portfolio.styleSettings}
-                  templateId={portfolio.templateId}
-                  title={portfolio.title}
-                />
+          </div>
+          <div className="rs-stage" ref={stageRef}>
+            <div className="rs-stage-space" style={{ width: documentSize.width * zoom, height: documentSize.height * zoom }}>
+              <div className="rs-sheet rs-editor-sheet" ref={sheetRef} style={{ transform: `scale(${zoom})` }} onDragOver={event => event.preventDefault()} onDrop={dropAsset}>
+                <div className="rs-safe-area" />
+                {guides.x !== undefined && <div className="rs-guide rs-guide-x" style={{ left: guides.x }} />}
+                {guides.y !== undefined && <div className="rs-guide rs-guide-y" style={{ top: guides.y }} />}
+                {portfolio.sections.filter(section => section.visible).map(section => {
+                  const frame = normalizeFrame(section);
+                  const active = selectedId === section.id;
+                  return <Rnd
+                    bounds="parent" className={`rs-rnd ${active ? "selected" : ""} ${overflowIds.has(section.id) ? "overflow" : ""}`}
+                    dragGrid={snapEnabled ? [8, 8] : [1, 1]}
+                    enableResizing={active && !frame.locked}
+                    key={section.id}
+                    minHeight={72} minWidth={120}
+                    onDrag={(event, data) => showAlignment(section.id, data.x, data.y)}
+                    onDragStart={() => setSelectedId(section.id)}
+                    onDragStop={(event, data) => {
+                      setGuides({});
+                      if (Math.abs(data.x - frame.x) > .5 || Math.abs(data.y - frame.y) > .5) {
+                        updateFrame(section.id, { x: snap(data.x, snapEnabled), y: snap(data.y, snapEnabled) });
+                      }
+                    }}
+                    onResizeStop={(event, direction, ref, delta, position) => {
+                      if (Math.abs(delta.width) > .5 || Math.abs(delta.height) > .5) {
+                        updateFrame(section.id, { x: snap(position.x, snapEnabled), y: snap(position.y, snapEnabled), width: snap(ref.offsetWidth, snapEnabled), height: snap(ref.offsetHeight, snapEnabled) });
+                      }
+                    }}
+                    position={{ x: frame.x, y: frame.y }}
+                    scale={zoom}
+                    size={{ width: frame.width, height: frame.height }}
+                    style={{ zIndex: frame.zIndex }}
+                    disableDragging={frame.locked}
+                    resizeGrid={snapEnabled ? [8, 8] : [1, 1]}
+                  >
+                    <div className="rs-selection-target" onClick={() => setSelectedId(section.id)}>
+                      <ResumeSection section={section} styleSettings={portfolio.styleSettings} onOverflow={reportOverflow} />
+                      {active && <div className="rs-selection-label"><span>{section.title}</span>{frame.locked && <LockKeyhole size={12} />}</div>}
+                    </div>
+                  </Rnd>;
+                })}
               </div>
             </div>
           </div>
-        </section>
+        </main>
 
-        <aside className="panel builder-inspector">
-          <div className="panel-body">
-            <h2>Design & Properties</h2>
-            <div className="form">
-              <div className="field">
-                <label>ชื่อ-นามสกุล / หัวข้อหลัก</label>
-                <input className="input" onChange={(event) => setPortfolio({ ...portfolio, title: event.target.value })} value={portfolio.title} />
-              </div>
-
-              {/* Dedicated Profile Photo Card */}
-              <div className="field profile-photo-upload-field">
-                <label>📷 รูปถ่ายโปรไฟล์ (1 รูปสำหรับเรซูเม่)</label>
-                <div className="profile-photo-tool-box">
-                  <div className="profile-photo-circle-preview">
-                    {sortedSections.find((s) => s.type === "profile")?.content.imageUrl ? (
-                      <img
-                        alt="profile photo"
-                        src={sortedSections.find((s) => s.type === "profile")?.content.imageUrl}
-                      />
-                    ) : (
-                      <span>{portfolio.title.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)}</span>
-                    )}
-                  </div>
-                  <div className="profile-photo-actions">
-                    <label className="upload-box profile-upload-btn">
-                      <ImageIcon size={15} />
-                      {sortedSections.find((s) => s.type === "profile")?.content.imageUrl ? "เปลี่ยนรูปถ่าย" : "เลือกรูปถ่ายโปรไฟล์"}
-                      <input
-                        accept="image/*"
-                        onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          const profSec = sortedSections.find((s) => s.type === "profile");
-                          if (file && profSec) {
-                            uploadImage(file, profSec.id);
-                          }
-                        }}
-                        type="file"
-                      />
-                    </label>
-                    {sortedSections.find((s) => s.type === "profile")?.content.imageUrl ? (
-                      <button
-                        className="btn btn-danger-soft"
-                        onClick={() => {
-                          const profSec = sortedSections.find((s) => s.type === "profile");
-                          if (profSec) {
-                            updateSectionContent(profSec.id, { imageUrl: "" });
-                          }
-                        }}
-                        style={{ padding: "4px 8px", fontSize: "12px" }}
-                        type="button"
-                      >
-                        <X size={13} />
-                        ลบรูปถ่าย
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-2">
-                <div className="field">
-                  <label>สีหลักประจำธีม</label>
-                  <input
-                    className="input color-input"
-                    onChange={(event) =>
-                      setPortfolio({
-                        ...portfolio,
-                        styleSettings: { ...portfolio.styleSettings, primaryColor: event.target.value }
-                      })
-                    }
-                    type="color"
-                    value={portfolio.styleSettings.primaryColor || "#b83919"}
-                  />
-                </div>
-                <div className="field">
-                  <label>แบบอักษร (Font)</label>
-                  <select
-                    className="select"
-                    onChange={(event) =>
-                      setPortfolio({
-                        ...portfolio,
-                        styleSettings: { ...portfolio.styleSettings, fontFamily: event.target.value }
-                      })
-                    }
-                    value={portfolio.styleSettings.fontFamily || "Inter"}
-                  >
-                    {fontFamilies.map((font) => (
-                      <option key={font.value} value={font.value}>
-                        {font.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="field" style={{ marginTop: "10px" }}>
-                <label>ธีมพื้นหลัง (Background Theme)</label>
-                <select
-                  className="select"
-                  onChange={(event) =>
-                    setPortfolio({
-                      ...portfolio,
-                      styleSettings: { ...portfolio.styleSettings, backgroundTheme: event.target.value as any }
-                    })
-                  }
-                  value={portfolio.styleSettings.backgroundTheme || "default"}
-                >
-                  {bgThemes.map((theme) => (
-                    <option key={theme.value} value={theme.value}>
-                      {theme.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="inspector-divider" />
-
-            {selectedSection && selectedSettings ? (
-              <div className="form inspector-panel">
-                <div className="component-summary">
-                  <div>
-                    <h3 className="inspector-heading">{selectedSection.title}</h3>
-                    <p className="muted">{selectedTemplate?.description}</p>
-                  </div>
-                  <span className="component-type">{selectedSection.type}</span>
-                </div>
-
-                <div className="inspector-quick-actions">
-                  <button
-                    className="btn"
-                    onClick={() => duplicateSection(selectedSection)}
-                    type="button"
-                  >
-                    <Copy size={15} />
-                    คัดลอกส่วนนี้
-                  </button>
-                </div>
-
-                <div className="property-tabs" role="tablist">
-                  {renderInspectorTab("content", "เนื้อหา (Content)", FileText)}
-                  {renderInspectorTab("design", "ตกแต่ง (Design)", Palette)}
-                </div>
-
-                {inspectorTab === "content" ? (
-                  <div className="property-panel">
-                    <div className="field">
-                      <label>ชื่อส่วนนี้ (Title)</label>
-                      <input className="input" onChange={(event) => updateSection(selectedSection.id, { title: event.target.value })} value={selectedSection.title} />
-                    </div>
-                    <label className="switch-row">
-                      <input checked={selectedSection.visible} onChange={(event) => updateSection(selectedSection.id, { visible: event.target.checked })} type="checkbox" />
-                      แสดงส่วนนี้บนหน้า Resume
-                    </label>
-                    <div className="field">
-                      <label>รายละเอียดข้อความ</label>
-                      <textarea
-                        className="textarea"
-                        onChange={(event) => updateContent(selectedSection.id, event.target.value, selectedItemsText)}
-                        rows={4}
-                        value={selectedSection.content.body || ""}
-                      />
-                    </div>
-                    <div className="field">
-                      <label>รายการย่อย (หนึ่งบรรทัดต่อรายการ)</label>
-                      <textarea className="textarea" onChange={(event) => updateContent(selectedSection.id, selectedSection.content.body || "", event.target.value)} rows={4} value={selectedItemsText} />
-                    </div>
-                    <div className="field">
-                      <label>รูปภาพประกอบ</label>
-                      <div className="image-tools">
-                        <label className="upload-box">
-                          <ImageIcon size={18} />
-                          เลือกรูปภาพ
-                          <input accept="image/*" onChange={(event) => event.target.files?.[0] && uploadImage(event.target.files[0], selectedSection.id)} type="file" />
-                        </label>
-                        {selectedSection.content.imageUrl ? (
-                          <button className="btn btn-danger" onClick={() => updateSectionContent(selectedSection.id, { imageUrl: "" })} type="button">
-                            <X size={16} />
-                            ลบรูป
-                          </button>
-                        ) : null}
-                      </div>
-                      <div className="field compact-field">
-                        <label>
-                          <LinkIcon size={14} />
-                          หรือใส่ Image URL
-                        </label>
-                        <input className="input" onChange={(event) => updateSectionContent(selectedSection.id, { imageUrl: event.target.value })} placeholder="https://example.com/image.jpg" value={selectedSection.content.imageUrl || ""} />
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                {inspectorTab === "design" ? (
-                  <div className="property-panel">
-                    <div className="grid grid-2">
-                      <div className="field">
-                        <label>สีประจำส่วนนี้</label>
-                        <input className="input color-input" onChange={(event) => updateSection(selectedSection.id, { accentColor: event.target.value })} type="color" value={selectedSection.accentColor || selectedTemplate?.accentColor || "#b83919"} />
-                      </div>
-                      <div className="field">
-                        <label>สีพื้นหลังส่วนนี้</label>
-                        <input className="input color-input" onChange={(event) => updateSection(selectedSection.id, { backgroundColor: event.target.value })} type="color" value={selectedSection.backgroundColor || "#ffffff"} />
-                      </div>
-                    </div>
-                    <div className="field">
-                      <label>เลือกสีจานเร็ว</label>
-                      <div className="swatch-row">
-                        {colorSwatches.map((color) => (
-                          <button
-                            aria-label={`เลือกสี ${color}`}
-                            className="swatch-btn"
-                            key={color}
-                            onClick={() => updateSection(selectedSection.id, { accentColor: color })}
-                            style={{ backgroundColor: color }}
-                            type="button"
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div className="field">
-                      <label>รูปแบบการแสดงผลรายการ (Item Style)</label>
-                      <select
-                        className="select"
-                        onChange={(event) => updateSectionSettings(selectedSection.id, { itemStyle: event.target.value as any })}
-                        value={selectedSettings.itemStyle || "timeline"}
-                      >
-                        <option value="timeline">Vertical Timeline (ลำดับไทม์ไลน์)</option>
-                        <option value="chips">Chips / Tags Badge (ป้ายเรียง)</option>
-                        <option value="cards">Mini Cards (การ์ดย่อย)</option>
-                        <option value="list">Clean List (รายการธรรมดา)</option>
-                      </select>
-                    </div>
-                    <div className="field">
-                      <label>จัดแนวข้อความ</label>
-                      <div className="segmented three icon-segmented">
-                        {renderSegmentButton(selectedSettings.alignment === "left", () => updateSectionSettings(selectedSection.id, { alignment: "left" }), "Left", AlignLeft)}
-                        {renderSegmentButton(selectedSettings.alignment === "center", () => updateSectionSettings(selectedSection.id, { alignment: "center" }), "Center", AlignCenter)}
-                        {renderSegmentButton(selectedSettings.alignment === "right", () => updateSectionSettings(selectedSection.id, { alignment: "right" }), "Right", AlignRight)}
-                      </div>
-                    </div>
-
-                    {selectedSection.type !== "profile" ? (
-                      <div className="field">
-                        <label>ตำแหน่งฝั่งคอลัมน์ (Column Side)</label>
-                        <div className="segmented">
-                          {renderSegmentButton(
-                            (selectedSettings.column || (["skills", "certificates"].includes(selectedSection.type) ? "right" : "left")) === "left",
-                            () => updateSectionSettings(selectedSection.id, { column: "left" }),
-                            "⬅️ ฝั่งซ้าย (Left)"
-                          )}
-                          {renderSegmentButton(
-                            (selectedSettings.column || (["skills", "certificates"].includes(selectedSection.type) ? "right" : "left")) === "right",
-                            () => updateSectionSettings(selectedSection.id, { column: "right" }),
-                            "➡️ ฝั่งขวา (Right)"
-                          )}
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-            ) : (
-              <div className="empty-state">เลือกส่วนบนเรซูเม่เพื่อแก้ไขรายละเอียด</div>
-            )}
+        <aside className={`rs-right rs-mobile-${mobilePanel === "properties" ? "open" : "closed"}`}>
+          <div className="rs-inspector-header"><strong>ปรับแต่ง</strong><button className="rs-mobile-close" aria-label="ปิดแผง" onClick={() => setMobilePanel(null)} type="button"><X size={17} /></button></div>
+          <div className="rs-inspector-scroll">
+            <div className="rs-field"><label htmlFor="resume-title">ชื่อ Resume</label><input id="resume-title" value={portfolio.title} onChange={event => markChanged({ ...portfolioRef.current, title: event.target.value }, "title")} /></div>
+            <div className="rs-document-fields"><div className="rs-field"><label htmlFor="resume-font">ฟอนต์หลัก</label><select id="resume-font" value={portfolio.styleSettings.fontFamily} onChange={event => markChanged({ ...portfolioRef.current, styleSettings: { ...portfolioRef.current.styleSettings, fontFamily: event.target.value } })}>{fontOptions.map(font => <option key={font}>{font}</option>)}</select></div>
+            <div className="rs-field"><label htmlFor="resume-accent">สีหลัก</label><input id="resume-accent" type="color" value={portfolio.styleSettings.primaryColor} onChange={event => markChanged({ ...portfolioRef.current, styleSettings: { ...portfolioRef.current.styleSettings, primaryColor: event.target.value } }, "accent")} /></div></div>
+            {selected ? <>
+              <div className="rs-selection-summary"><span><Settings2 size={17} /> {selected.title}</span><div>
+                <button className="rs-mini-icon" aria-label="คัดลอกบล็อก" title="คัดลอกบล็อก" onClick={() => duplicateSection(selected)} type="button"><Copy size={16} /></button>
+                <button className="rs-mini-icon" aria-label="ลบบล็อก" title="ลบบล็อก" disabled={selected.frame?.locked} onClick={() => removeSection(selected)} type="button"><Trash2 size={16} /></button>
+              </div></div>
+              <div className="rs-property-tabs">{(["content", "design", "layout"] as InspectorTab[]).map(tab => <button className={inspectorTab === tab ? "active" : ""} key={tab} onClick={() => setInspectorTab(tab)} type="button">{tab === "content" ? "เนื้อหา" : tab === "design" ? "ดีไซน์" : "ตำแหน่ง"}</button>)}</div>
+              {inspectorTab === "content" && <div className="rs-property-body">
+                <div className="rs-field"><label htmlFor="block-title">ชื่อบล็อก</label><input id="block-title" value={selected.title} onChange={event => updateSection(selected.id, section => ({ ...section, title: event.target.value }), `title-${selected.id}`)} /></div>
+                <label className="rs-check"><input checked={selected.visible} onChange={event => updateSection(selected.id, section => ({ ...section, visible: event.target.checked }))} type="checkbox" /> แสดงบล็อกนี้</label>
+                {selected.settings?.contentMode !== "image" && <>
+                  <label className="rs-check"><input checked={selected.settings?.showTitle !== false} onChange={event => updateSettings(selected.id, { showTitle: event.target.checked })} type="checkbox" /> แสดงหัวข้อ</label>
+                  <div className="rs-field"><label htmlFor="block-body">รายละเอียด</label><textarea id="block-body" rows={5} value={selected.content.body || ""} onChange={event => updateSection(selected.id, section => ({ ...section, content: { ...section.content, body: event.target.value } }), `body-${selected.id}`)} /></div>
+                  <div className="rs-field"><label htmlFor="block-items">รายการ (บรรทัดละหนึ่ง)</label><textarea id="block-items" rows={4} value={(selected.content.items || []).join("\n")} onChange={event => updateSection(selected.id, section => ({ ...section, content: { ...section.content, items: event.target.value.split("\n") } }), `items-${selected.id}`)} /></div>
+                </>}
+                <div className="rs-field"><label htmlFor="block-image">รูปภาพ</label><input accept="image/jpeg,image/png,image/webp,image/gif" id="block-image" onChange={event => { const file = event.target.files?.[0]; if (file) void uploadImage(file); }} type="file" /></div>
+                <div className="rs-field"><label htmlFor="block-image-url">หรือ URL รูปภาพ</label><input id="block-image-url" placeholder="https://..." value={selected.content.imageUrl?.startsWith("data:") ? "" : selected.content.imageUrl || ""} onChange={event => updateSection(selected.id, section => ({ ...section, content: { ...section.content, imageUrl: event.target.value } }), `image-${selected.id}`)} /></div>
+                {selected.content.imageUrl && <button className="rs-button" onClick={() => updateSection(selected.id, section => ({ ...section, content: { ...section.content, imageUrl: "" } }))} type="button"><Trash2 size={15} /> ลบรูป</button>}
+                <div className="rs-field"><label htmlFor="block-fit">การวางภาพ</label><select id="block-fit" value={selected.settings?.imageFit || "cover"} onChange={event => updateSettings(selected.id, { imageFit: event.target.value as "cover" | "contain" })}><option value="cover">เต็มพื้นที่</option><option value="contain">เห็นภาพทั้งหมด</option></select></div>
+                {selected.settings?.contentMode !== "image" && selected.content.imageUrl && <div className="rs-field"><label htmlFor="block-image-position">ตำแหน่งรูปกับข้อความ</label><select id="block-image-position" value={selected.settings?.imagePosition || "left"} onChange={event => updateSettings(selected.id, { imagePosition: event.target.value as "left" | "right" | "top" })}><option value="left">ด้านซ้าย</option><option value="right">ด้านขวา</option><option value="top">ด้านบน</option></select></div>}
+              </div>}
+              {inspectorTab === "design" && <div className="rs-property-body">
+                <div className="rs-color-pair"><div className="rs-field"><label htmlFor="block-accent">สีหัวข้อ</label><input id="block-accent" type="color" value={selected.accentColor || portfolio.styleSettings.primaryColor} onChange={event => updateSection(selected.id, section => ({ ...section, accentColor: event.target.value }), `color-${selected.id}`)} /></div><div className="rs-field"><label htmlFor="block-background">สีพื้นหลัง</label><input id="block-background" type="color" value={selected.backgroundColor || "#ffffff"} onChange={event => updateSection(selected.id, section => ({ ...section, backgroundColor: event.target.value }), `background-${selected.id}`)} /></div></div>
+                <div className="rs-swatches">{colors.map(color => <button aria-label={`ใช้สี ${color}`} key={color} onClick={() => updateSection(selected.id, section => ({ ...section, accentColor: color }))} style={{ backgroundColor: color }} type="button" />)}</div>
+                <div className="rs-field"><label htmlFor="block-text-color">สีข้อความ</label><input id="block-text-color" type="color" value={selected.settings?.textColor || "#23313c"} onChange={event => updateSettings(selected.id, { textColor: event.target.value }, `textcolor-${selected.id}`)} /></div>
+                <div className="rs-field"><label htmlFor="block-font">ฟอนต์บล็อก</label><select id="block-font" value={selected.settings?.fontFamily || ""} onChange={event => updateSettings(selected.id, { fontFamily: event.target.value || undefined })}><option value="">ตาม Resume</option>{fontOptions.map(font => <option key={font}>{font}</option>)}</select></div>
+                <div className="rs-compact-row"><div className="rs-field"><label htmlFor="block-font-size">ขนาดตัวอักษร</label><input id="block-font-size" max={42} min={10} onChange={event => updateSettings(selected.id, { fontSize: Number(event.target.value) }, `fontsize-${selected.id}`)} type="number" value={selected.settings?.fontSize || portfolio.styleSettings.fontSize} /></div><div className="rs-field"><label htmlFor="block-line-height">ระยะบรรทัด</label><input id="block-line-height" max={2} min={1} onChange={event => updateSettings(selected.id, { lineHeight: Number(event.target.value) }, `lineheight-${selected.id}`)} step={0.1} type="number" value={selected.settings?.lineHeight || 1.5} /></div></div>
+                <div className="rs-field"><label htmlFor="block-weight">น้ำหนักตัวอักษร</label><select id="block-weight" value={selected.settings?.fontWeight || 400} onChange={event => updateSettings(selected.id, { fontWeight: Number(event.target.value) })}><option value={400}>ปกติ</option><option value={600}>กึ่งหนา</option><option value={700}>หนา</option></select></div>
+                <div className="rs-field"><span>การจัดแนวข้อความ</span><div className="rs-segments">{(["left", "center", "right"] as const).map((value, index) => <button aria-label={`จัด${value}`} className={selected.settings?.alignment === value ? "active" : ""} key={value} onClick={() => updateSettings(selected.id, { alignment: value })} type="button">{index === 0 ? <AlignLeft size={17} /> : index === 1 ? <AlignCenter size={17} /> : <AlignRight size={17} />}</button>)}</div></div>
+                <div className="rs-field"><label htmlFor="block-columns">คอลัมน์ภายในบล็อก</label><select id="block-columns" value={selected.columns || 1} onChange={event => updateSection(selected.id, section => ({ ...section, columns: Number(event.target.value) as 1 | 2 }))}><option value={1}>1 คอลัมน์</option><option value={2}>2 คอลัมน์</option></select></div>
+                <div className="rs-field"><label htmlFor="block-items-style">รูปแบบรายการ</label><select id="block-items-style" value={selected.settings?.itemStyle || "list"} onChange={event => updateSettings(selected.id, { itemStyle: event.target.value as PortfolioSectionSettings["itemStyle"] })}>{["list", "chips", "cards", "timeline", "bars", "pills"].map(style => <option key={style} value={style}>{style}</option>)}</select></div>
+                <div className="rs-field"><label htmlFor="block-padding">ระยะขอบในบล็อก</label><select id="block-padding" value={selected.settings?.padding || "comfortable"} onChange={event => updateSettings(selected.id, { padding: event.target.value as PortfolioSectionSettings["padding"] })}><option value="compact">กระชับ</option><option value="comfortable">ปกติ</option><option value="spacious">โปร่ง</option></select></div>
+                <div className="rs-compact-row"><div className="rs-field"><label htmlFor="block-radius">มุม</label><select id="block-radius" value={selected.settings?.radius || "soft"} onChange={event => updateSettings(selected.id, { radius: event.target.value as PortfolioSectionSettings["radius"] })}><option value="none">เหลี่ยม</option><option value="soft">เล็กน้อย</option><option value="rounded">โค้ง</option></select></div><div className="rs-field"><label htmlFor="block-shadow">เงา</label><select id="block-shadow" value={selected.settings?.shadow || "none"} onChange={event => updateSettings(selected.id, { shadow: event.target.value as PortfolioSectionSettings["shadow"] })}><option value="none">ไม่มี</option><option value="soft">บาง</option><option value="elevated">ชัด</option></select></div></div>
+              </div>}
+              {inspectorTab === "layout" && <div className="rs-property-body">
+                <div className="rs-geometry-grid">{(["x", "y", "width", "height"] as const).map(key => <div className="rs-field" key={key}><label htmlFor={`frame-${key}`}>{key.toUpperCase()}</label><input id={`frame-${key}`} min={0} onChange={event => updateFrame(selected.id, { [key]: Number(event.target.value) })} type="number" value={Math.round(normalizeFrame(selected)[key])} /></div>)}</div>
+                <div className="rs-compact-row"><button className="rs-button" onClick={() => moveLayer(selected, 1)} type="button"><ArrowUp size={15} /> นำไปหน้า</button><button className="rs-button" onClick={() => moveLayer(selected, -1)} type="button"><ArrowDown size={15} /> ส่งไปหลัง</button></div>
+                <label className="rs-check"><input checked={Boolean(selected.frame?.locked)} onChange={event => updateFrame(selected.id, { locked: event.target.checked })} type="checkbox" /> ล็อกตำแหน่ง</label>
+              </div>}
+            </> : <div className="rs-no-selection">เลือกบล็อกบนกระดาษเพื่อแก้ไข</div>}
           </div>
         </aside>
       </div>
+
+      {mobilePanel && <button className="rs-mobile-scrim" aria-label="ปิดแผง" onClick={() => setMobilePanel(null)} type="button" />}
+
+      {preview && <div className="rs-preview-overlay" role="dialog" aria-modal="true" aria-label="ตัวอย่าง Resume">
+        <div className="rs-preview-toolbar"><strong>ตัวอย่าง Resume</strong><div><button className="rs-button" onClick={() => void printPdf()} type="button"><FileDown size={16} /> บันทึก PDF</button><button className="rs-icon-button" aria-label="ปิดตัวอย่าง" onClick={() => setPreview(false)} type="button"><X size={20} /></button></div></div>
+        <ResumeRenderer sections={portfolio.sections} styleSettings={portfolio.styleSettings} templateId={portfolio.templateId} title={portfolio.title} />
+      </div>}
     </div>
   );
 }

@@ -3,7 +3,6 @@
 import {
   BookOpen,
   ChevronRight,
-  ExternalLink,
   GraduationCap,
   LayoutDashboard,
   LogOut,
@@ -12,7 +11,6 @@ import {
   UserPlus,
   Users
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -109,10 +107,6 @@ export function AdminShell({
             {activeTab === "published" ? <ChevronRight size={14} className="admin-nav-chevron" /> : null}
           </button>
 
-          <Link className="admin-nav-item" href="/dashboard" target="_blank">
-            <span className="admin-nav-icon"><ExternalLink size={18} /></span>
-            <span className="admin-nav-text">เปิดดูสารบบรวม</span>
-          </Link>
         </nav>
 
         <div className="admin-sidebar-divider" />

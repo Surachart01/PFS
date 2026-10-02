@@ -31,7 +31,7 @@ export default async function AdminPortfolioPreviewPage({
   if (!portfolio) {
     return (
       <div style={{ padding: "60px 20px", textAlign: "center", color: "#64748b" }}>
-        <h2>นักศึกษายังไม่ได้เริ่มสร้าง Portfolio</h2>
+        <h2>นักศึกษายังไม่ได้เริ่มสร้าง Resume</h2>
         <p>นักศึกษา: {student.firstName} {student.lastName} ({student.studentId})</p>
         <Link href="/admin" className="btn btn-primary" style={{ marginTop: 20, display: "inline-flex" }}>
           <ArrowLeft size={16} /> กลับหน้า Admin
