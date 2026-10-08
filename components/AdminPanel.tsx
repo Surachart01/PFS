@@ -21,6 +21,7 @@ import {
   X
 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
+import { AdminAccountManager, type AdminAccount } from "@/components/AdminAccountManager";
 import { AdminShell } from "@/components/AdminShell";
 
 type AdminStudent = {
@@ -43,9 +44,11 @@ const YEAR_LABELS: Record<number, string> = { 1: "ปี 1", 2: "ปี 2", 3: "
 
 export function AdminPanel({
   initialStudents,
+  initialAdmins,
   user
 }: {
   initialStudents: AdminStudent[];
+  initialAdmins: AdminAccount[];
   user: { firstName: string; lastName: string; email?: string; role: string };
 }) {
   const [students, setStudents] = useState(initialStudents);
@@ -282,7 +285,7 @@ export function AdminPanel({
     ? "รายชื่อนักศึกษาทั้งหมด"
     : activeTab === "published"
     ? "Resume ที่เผยแพร่แล้ว"
-    : "การจัดการบัญชีนักศึกษา";
+    : "จัดการบัญชีผู้ใช้";
 
   const pageDesc = activeTab === "dashboard"
     ? "ภาพรวมนักศึกษา สถิติระบบ และสถานะ Resume ทั้งหมด"
@@ -420,6 +423,8 @@ export function AdminPanel({
           🛡️ <strong>โหมดจัดการบัญชี:</strong> คุณสามารถคลิกปุ่มเปิด/ปิดสถานะบัญชี, รีเซ็ตรหัสผ่าน, หรือแก้ไขข้อมูลนักศึกษาได้ทันทีในคอลัมน์ด้านขวาสุดของตาราง
         </div>
       ) : null}
+
+      {activeTab === "accounts" && <AdminAccountManager initialAdmins={initialAdmins} />}
 
       {/* ── Toolbar ───────────────────────── */}
       <div className="adm-card">

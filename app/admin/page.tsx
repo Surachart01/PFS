@@ -14,6 +14,8 @@ export default async function AdminPage() {
 
   const db = await getDb();
   const users = await db.collection<UserDoc>("users").find({ role: "student" }).sort({ createdAt: -1 }).toArray();
+  const adminDocs = await db.collection<UserDoc>("users").find({ role: "admin" }).sort({ createdAt: -1 }).toArray();
+  const admins = adminDocs.map(a => ({ id: a._id.toString(), firstName: a.firstName, lastName: a.lastName, email: a.email, status: a.status }));
   const userIds = users.map((s) => s._id);
   const portfolios = await db.collection<PortfolioDoc>("portfolios").find({ userId: { $in: userIds } }).toArray();
   const portfolioMap = new Map(portfolios.map((p) => [p.userId.toString(), p]));
@@ -36,6 +38,6 @@ export default async function AdminPage() {
   });
 
   return (
-    <AdminPanel initialStudents={students} user={user} />
+    <AdminPanel initialStudents={students} initialAdmins={admins} user={user} />
   );
 }
